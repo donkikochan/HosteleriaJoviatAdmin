@@ -4,6 +4,7 @@ import { Route } from "wouter";
 import { Box } from "@chakra-ui/react";
 import Nav from "./Components/Nav/Nav";
 import HomePage from "./Components/HomePage/HomePage";
+import StudentsForm from "./Components/Form/StudentsForm";
 
 function App() {
   return (
@@ -12,6 +13,7 @@ function App() {
         <Nav />
         <Route path="/" component={HomePage} />
       </Box>
+      <Route path="/carrega-alumnes" component={StudentsForm} />
     </ChakraProvider>
   );
 }

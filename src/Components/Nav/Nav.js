@@ -2,13 +2,14 @@ import { Box, Stack, Image } from "@chakra-ui/react";
 import React from "react";
 
 const Nav = () => {
-  const logo = require("./logo.png");
+  const logo = require("./logo.webp");
   return (
     <Box
       as="nav"
       className="navBar"
-      bg="#666666"
+      bg="#111820"
       padding={"1rem"}
+      pt={5}
       position={"fixed"}
       width={"100%"}
       height={"70px"}
@@ -22,12 +23,7 @@ const Nav = () => {
         justify={"flex-start"}
         paddingLeft={"10vw"}
       >
-        <Image
-          src={logo}
-          alt="Joviat logo"
-          boxSize={"40px"}
-          borderRadius={"full"}
-        />
+        <Image src={logo} alt="Joviat logo" width={150} />
       </Stack>
     </Box>
   );
