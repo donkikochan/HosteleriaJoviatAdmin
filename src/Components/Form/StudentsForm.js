@@ -13,7 +13,18 @@ import {
 } from "@chakra-ui/react";
 import { useRouter } from "wouter";
 
+import { getFirestore, collection, getDocs, setDoc } from "@firebase/firestore";
+import { app } from "../../firebaseConfig";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+
 const StudentsForm = () => {
+  const fetchDatos = async () => {
+    console.log("Hola mundo");
+    const db = getFirestore(app);
+    const querySnapshot = await getDocs(collection(db, "users"));
+    const datosFetched = querySnapshot.docs.map((doc) => doc.data());
+    console.log(datosFetched);
+  };
   const [nom, setNom] = useState("");
   const [cognom, setCognom] = useState("");
   const [correu, setCorreu] = useState("");
@@ -61,7 +72,7 @@ const StudentsForm = () => {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (
       nom === "" ||
@@ -74,7 +85,30 @@ const StudentsForm = () => {
     ) {
       alert("Error: Completa todos los campos obligatorios");
     } else {
-      router.push("/success");
+      try {
+        // Crear usuario en Firebase Authentication
+        const userCredential = await createUserWithEmailAndPassword(
+          correu,
+          contrasenya
+        );
+        const user = userCredential.user;
+
+        // Guardar otros datos en Firestore
+        const db = getFirestore(app);
+        await setDoc(collection(db, "users", user.uid), {
+          nom,
+          cognom,
+          estatAcademic,
+          dataNaixement,
+          nomUsuari,
+        });
+
+        // Redirigir al usuario a la página de éxito
+        router.push("/success");
+      } catch (error) {
+        // Manejar errores de Firebase Authentication
+        alert("Error al crear usuario: " + (error && error.message));
+      }
     }
   };
 
@@ -211,6 +245,7 @@ const StudentsForm = () => {
             Carregar
           </Button>
         </FormControl>
+        <Button onClick={fetchDatos}>click</Button>
       </VStack>
     </Box>
   );
