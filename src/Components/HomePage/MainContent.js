@@ -36,8 +36,13 @@ const MainContent = () => {
           JoviatApp
         </Heading>
         <Link to="/carrega-alumnes">
-          <Button colorScheme="blackAlpha" mt={18} mb={18}>
-            Començar la càrrega
+          <Button colorScheme="blue" mt={18}>
+            Carregar alumnes
+          </Button>
+        </Link>
+        <Link to="/carrega-alumnes">
+          <Button colorScheme="blue" mt={18} mb={18}>
+            Carregar restaurants
           </Button>
         </Link>
       </VStack>

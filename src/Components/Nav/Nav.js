@@ -1,5 +1,6 @@
 import { Box, Stack, Image } from "@chakra-ui/react";
 import React from "react";
+import { Link } from "wouter";
 
 const Nav = () => {
   const logo = require("./logo.webp");
@@ -23,7 +24,9 @@ const Nav = () => {
         justify={"flex-start"}
         paddingLeft={"10vw"}
       >
-        <Image src={logo} alt="Joviat logo" width={150} />
+        <Link to="/">
+          <Image src={logo} alt="Joviat logo" width={150} />
+        </Link>
       </Stack>
     </Box>
   );

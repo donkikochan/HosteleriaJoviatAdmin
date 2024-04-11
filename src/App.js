@@ -5,6 +5,7 @@ import { Box } from "@chakra-ui/react";
 import Nav from "./Components/Nav/Nav";
 import HomePage from "./Components/HomePage/HomePage";
 import StudentsForm from "./Components/Form/StudentsForm";
+import Success from "./Components/Form/Success";
 
 function App() {
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/" component={HomePage} />
       </Box>
       <Route path="/carrega-alumnes" component={StudentsForm} />
+      <Route path="/success" component={Success} />
     </ChakraProvider>
   );
 }
