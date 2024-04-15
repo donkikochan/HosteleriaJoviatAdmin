@@ -2,7 +2,6 @@ import React, { useState } from "react";
 import {
   FormControl,
   FormLabel,
-  FormErrorMessage,
   FormHelperText,
   Input,
   Button,
@@ -11,11 +10,17 @@ import {
   Box,
   Heading,
 } from "@chakra-ui/react";
-import { useRouter } from "wouter";
+import { useLocation } from "wouter";
 
-import { getFirestore, collection, getDocs, setDoc } from "@firebase/firestore";
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  setDoc,
+  doc,
+} from "@firebase/firestore";
 import { app } from "../../firebaseConfig";
-import { createUserWithEmailAndPassword } from "firebase/auth";
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
 
 const StudentsForm = () => {
   const fetchDatos = async () => {
@@ -41,7 +46,7 @@ const StudentsForm = () => {
     dataNaixement: false,
     nomUsuari: false,
   });
-  const router = useRouter();
+  const [location, navigate] = useLocation();
 
   const handleNomChange = (e) => {
     setNom(e.target.value);
@@ -87,7 +92,9 @@ const StudentsForm = () => {
     } else {
       try {
         // Crear usuario en Firebase Authentication
+        const auth = getAuth(app);
         const userCredential = await createUserWithEmailAndPassword(
+          auth,
           correu,
           contrasenya
         );
@@ -95,7 +102,7 @@ const StudentsForm = () => {
 
         // Guardar otros datos en Firestore
         const db = getFirestore(app);
-        await setDoc(collection(db, "users", user.uid), {
+        await setDoc(doc(db, "users", user.uid), {
           nom,
           cognom,
           estatAcademic,
@@ -104,7 +111,7 @@ const StudentsForm = () => {
         });
 
         // Redirigir al usuario a la página de éxito
-        router.push("/success");
+        navigate("/success");
       } catch (error) {
         // Manejar errores de Firebase Authentication
         alert("Error al crear usuario: " + (error && error.message));
