@@ -40,7 +40,7 @@ const MainContent = () => {
             Carregar alumnes
           </Button>
         </Link>
-        <Link to="/carrega-alumnes">
+        <Link to="/carrega-restaurants">
           <Button colorScheme="blue" mt={18} mb={18}>
             Carregar restaurants
           </Button>
