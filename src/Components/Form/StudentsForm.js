@@ -34,17 +34,17 @@ const StudentsForm = () => {
   const [cognom, setCognom] = useState("");
   const [correu, setCorreu] = useState("");
   const [contrasenya, setContrasenya] = useState("");
-  const [estatAcademic, setEstatAcademic] = useState("");
-  const [dataNaixement, setDataNaixement] = useState("");
-  const [nomUsuari, setNomUsuari] = useState("");
+  const [academicStatus, setacademicStatus] = useState("");
+  const [birth, setbirth] = useState("");
+  const [username, setusername] = useState("");
   const [touchedFields, setTouchedFields] = useState({
     nom: false,
     cognom: false,
     correu: false,
     contrasenya: false,
-    estatAcademic: false,
-    dataNaixement: false,
-    nomUsuari: false,
+    academicStatus: false,
+    birth: false,
+    username: false,
   });
   const [location, navigate] = useLocation();
 
@@ -60,14 +60,14 @@ const StudentsForm = () => {
   const handleContrasenyaChange = (e) => {
     setContrasenya(e.target.value);
   };
-  const handleEstatAcademicChange = (e) => {
-    setEstatAcademic(e.target.value);
+  const handleacademicStatusChange = (e) => {
+    setacademicStatus(e.target.value);
   };
-  const handleDataNaixementChange = (e) => {
-    setDataNaixement(e.target.value);
+  const handlebirthChange = (e) => {
+    setbirth(e.target.value);
   };
-  const handleNomUsuariChange = (e) => {
-    setNomUsuari(e.target.value);
+  const handleusernameChange = (e) => {
+    setusername(e.target.value);
   };
 
   const handleBlur = (field) => {
@@ -84,9 +84,9 @@ const StudentsForm = () => {
       cognom === "" ||
       correu === "" ||
       contrasenya === "" ||
-      nomUsuari === "" ||
-      dataNaixement === "" ||
-      estatAcademic === ""
+      username === "" ||
+      birth === "" ||
+      academicStatus === ""
     ) {
       alert("Error: Completa todos los campos obligatorios");
     } else {
@@ -105,9 +105,9 @@ const StudentsForm = () => {
         await setDoc(doc(db, "users", user.uid), {
           nom,
           cognom,
-          estatAcademic,
-          dataNaixement,
-          nomUsuari,
+          academicStatus,
+          birth,
+          username,
         });
 
         // Redirigir al usuario a la página de éxito
@@ -199,7 +199,7 @@ const StudentsForm = () => {
             Entre la contrasenya.
           </FormHelperText>
           <FormLabel mt={5}>Estat academic</FormLabel>
-          <Select value={estatAcademic} onChange={handleEstatAcademicChange}>
+          <Select value={academicStatus} onChange={handleacademicStatusChange}>
             <option value="">Selecciona una opción</option>
             <option value="Alumn">Alumn</option>
             <option value="Ex-alumn">Ex-alumn</option>
@@ -207,7 +207,7 @@ const StudentsForm = () => {
           <FormHelperText
             mt={1}
             color={
-              touchedFields.estatAcademic && estatAcademic === ""
+              touchedFields.academicStatus && academicStatus === ""
                 ? "red"
                 : "gray"
             }
@@ -217,33 +217,29 @@ const StudentsForm = () => {
           <FormLabel mt={5}>Data de naixement</FormLabel>
           <Input
             type="date"
-            value={dataNaixement}
-            onChange={handleDataNaixementChange}
-            onBlur={() => handleBlur("dataNaixement")}
+            value={birth}
+            onChange={handlebirthChange}
+            onBlur={() => handleBlur("birth")}
             placeholder="Data de naixement"
-            isInvalid={touchedFields.dataNaixement && dataNaixement === ""}
+            isInvalid={touchedFields.birth && birth === ""}
           />
           <FormHelperText
             mt={1}
-            color={
-              touchedFields.dataNaixement && dataNaixement === ""
-                ? "red"
-                : "gray"
-            }
+            color={touchedFields.birth && birth === "" ? "red" : "gray"}
           >
             Seleccione la data de naixement.
           </FormHelperText>
           <FormLabel mt={5}>Nom d'usuari</FormLabel>
           <Input
-            value={nomUsuari}
-            onChange={handleNomUsuariChange}
-            onBlur={() => handleBlur("nomUsuari")}
+            value={username}
+            onChange={handleusernameChange}
+            onBlur={() => handleBlur("username")}
             placeholder="Nom de usuari"
-            isInvalid={touchedFields.nomUsuari && nomUsuari === ""}
+            isInvalid={touchedFields.username && username === ""}
           />
           <FormHelperText
             mt={1}
-            color={touchedFields.nomUsuari && nomUsuari === "" ? "red" : "gray"}
+            color={touchedFields.username && username === "" ? "red" : "gray"}
           >
             Entre el nom d'usuari.
           </FormHelperText>
