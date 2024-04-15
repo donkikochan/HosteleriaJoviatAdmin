@@ -252,7 +252,6 @@ const StudentsForm = () => {
             Carregar
           </Button>
         </FormControl>
-        <Button onClick={fetchDatos}>click</Button>
       </VStack>
     </Box>
   );
