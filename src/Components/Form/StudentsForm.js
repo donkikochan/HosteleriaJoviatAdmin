@@ -90,6 +90,9 @@ const StudentsForm = () => {
     ) {
       alert("Error: Completa todos los campos obligatorios");
     } else {
+      const defaultImageUrl = "https://cdn.icon-icons.com/icons2/1369/PNG/512/-person_90382.png";
+  
+
       try {
         // Crear usuario en Firebase Authentication
         const auth = getAuth(app);
@@ -108,6 +111,7 @@ const StudentsForm = () => {
           academicStatus,
           birth,
           username,
+          imageUrl : defaultImageUrl,
         });
 
         // Redirigir al usuario a la página de éxito
