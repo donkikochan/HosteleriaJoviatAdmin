@@ -43,7 +43,7 @@ const MainContent = () => {
         </Link>
         <Link to="/carrega-alumnes">
           <Button colorScheme="blue" mt={18}>
-            Carregar alumnes
+            Veure alumnes
           </Button>
         </Link>
         </HStack>
@@ -55,7 +55,7 @@ const MainContent = () => {
         </Link>
         <Link to="/carrega-restaurants">
           <Button colorScheme="blue" mt={18} mb={18}>
-            Carregar restaurants
+            Veure restaurants
           </Button>
         </Link>
         </HStack>

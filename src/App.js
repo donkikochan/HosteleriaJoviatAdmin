@@ -9,6 +9,8 @@ import Success from "./Components/Form/Success";
 import RestaurantsForm from "./Components/Form/RestaurantsForm";
 import SuccessRest from "./Components/Form/SuccessRest";
 
+
+
 function App() {
   return (
     <ChakraProvider>
@@ -17,8 +19,10 @@ function App() {
         <Route path="/" component={HomePage} />
       </Box>
       <Route path="/carrega-alumnes" component={StudentsForm} />
+   
       <Route path="/success" component={Success} />
       <Route path="/carrega-restaurants" component={RestaurantsForm} />
+      
       <Route path="/success-restaurant" component={SuccessRest} />
     </ChakraProvider>
   );
