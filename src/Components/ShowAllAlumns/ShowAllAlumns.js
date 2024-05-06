@@ -26,26 +26,45 @@ const ShowAllAlumns = () => {
     fetchStudents();
   }, []);
 
-  const handleDelete = async () => {
-    const db = getFirestore(app);
+  // Función para manejar la eliminación del alumno (actualmente deshabilitado)
+  /* const handleDelete = async () => {
     try {
-      await deleteDoc(doc(db, "users", selectedStudent.id));
+      // Eliminar el estudiante de Firestore
+      await deleteStudentFromFirestore(selectedStudent.id);
+
+      // Llamar a la Cloud Function para eliminar la autenticación del estudiante
+      await deleteStudentAndAuth(selectedStudent.id);
+
+      // Cerrar el diálogo y actualizar la lista de estudiantes
       setIsDeleteDialogOpen(false);
       fetchStudents(); // Actualizar la lista después de eliminar
     } catch (error) {
-      console.error("Error deleting document: ", error);
+      console.error("Error deleting student and auth:", error);
     }
   };
 
+  // Función para eliminar un estudiante de Firestore (actualmente deshabilitado)
+  const deleteStudentFromFirestore = async (studentId) => {
+    const db = getFirestore(app);
+    await deleteDoc(doc(db, "users", studentId));
+  };
+
+  // Función para manejar la eliminación de la autenticación del alumno (parte de backend) (actualmente deshabilitado)
+  const deleteStudentAndAuth = async (studentId) => {
+    await fetch(`/deleteStudentAndAuth/${studentId}`);
+  };
+
+  // Función para abrir el diálogo de confirmación de eliminación (actualmente deshabilitado)
   const openDeleteDialog = (student) => {
     setSelectedStudent(student);
     setIsDeleteDialogOpen(true);
   };
 
+  // Función para cerrar el diálogo de confirmación de eliminación (actualmente deshabilitado)
   const closeDeleteDialog = () => {
     setSelectedStudent(null);
     setIsDeleteDialogOpen(false);
-  };
+  }; */
 
   return (
     <Box mt={"10rem"} padding={4} bg={bgColor} maxW="3xl" marginX="auto" borderRadius="lg" shadow="md">
@@ -62,9 +81,10 @@ const ShowAllAlumns = () => {
                 </Box>
               </HStack>
               <HStack>
+                {/* Botón para abrir el diálogo de eliminación (actualmente deshabilitado)
                 <Button colorScheme="red" size="sm" onClick={() => openDeleteDialog(student)}>
                   <DeleteIcon />
-                </Button>
+                </Button> */}
                 <Button colorScheme="blue" size="sm" ml={2}>
                   <EditIcon />
                 </Button>
@@ -73,29 +93,6 @@ const ShowAllAlumns = () => {
           ))}
         </List>
       </VStack>
-
-      {/* Dialogo de confirmación de eliminación */}
-      <AlertDialog isOpen={isDeleteDialogOpen} leastDestructiveRef={cancelRef} onClose={closeDeleteDialog}>
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Confirmar Eliminación
-            </AlertDialogHeader>
-            <AlertDialogCloseButton />
-            <AlertDialogBody>
-              ¿Estás seguro de que deseas eliminar a {selectedStudent && selectedStudent.nom} {selectedStudent && selectedStudent.cognom}?
-            </AlertDialogBody>
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={closeDeleteDialog}>
-                Cancelar
-              </Button>
-              <Button colorScheme="red" onClick={handleDelete} ml={3}>
-                Eliminar
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
     </Box>
   );
 };
