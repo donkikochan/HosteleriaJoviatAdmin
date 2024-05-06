@@ -41,7 +41,7 @@ const MainContent = () => {
             Carregar alumnes
           </Button>
         </Link>
-        <Link to="/carrega-alumnes">
+        <Link to="/veure-alumnes">
           <Button colorScheme="blue" mt={18}>
             Veure alumnes
           </Button>
@@ -53,7 +53,7 @@ const MainContent = () => {
             Carregar restaurants
           </Button>
         </Link>
-        <Link to="/carrega-restaurants">
+        <Link to="/veure-restaurants">
           <Button colorScheme="blue" mt={18} mb={18}>
             Veure restaurants
           </Button>
