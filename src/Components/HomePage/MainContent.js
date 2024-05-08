@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Heading, Image, VStack, Button } from "@chakra-ui/react";
+import { Box, Heading, Image, VStack, Button, HStack } from "@chakra-ui/react";
 import { Link } from "wouter";
 const MainContent = () => {
   const logo = require("../Nav/logo.png");
@@ -35,16 +35,31 @@ const MainContent = () => {
           Benvingut a la pàgina de càrrega d'alumnes per a l'app d'Hostaleria
           JoviatApp
         </Heading>
-        <Link to="/carrega-alumnes">
+        <HStack>
+        <Link to="/Ingressar-alumnes">
           <Button colorScheme="blue" mt={18}>
-            Carregar alumnes
+          Ingressar alumnes
           </Button>
         </Link>
-        <Link to="/carrega-restaurants">
+        <Link to="/veure-alumnes">
+          <Button colorScheme="blue" mt={18}>
+            Veure alumnes
+          </Button>
+        </Link>
+        </HStack>
+        <HStack>
+        <Link to="/Ingressar-restaurants">
           <Button colorScheme="blue" mt={18} mb={18}>
-            Carregar restaurants
+          Ingressar restaurants
           </Button>
         </Link>
+        <Link to="/veure-restaurants">
+          <Button colorScheme="blue" mt={18} mb={18}>
+            Veure restaurants
+          </Button>
+        </Link>
+        </HStack>
+       
       </VStack>
     </Box>
   );
