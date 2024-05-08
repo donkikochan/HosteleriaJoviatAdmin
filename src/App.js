@@ -10,7 +10,7 @@ import RestaurantsForm from "./Components/Form/RestaurantsForm";
 import SuccessRest from "./Components/Form/SuccessRest";
 import ShowAllAlumns from "./Components/ShowAllAlumns/ShowAllAlumns";
 import ShowAllRestaurants from "./Components/ShowAllRestaurants/ShowAllRestaurants";
-
+import EditStudentForm from "./Components/Form/EditStudentForm"
 function App() {
   return (
     <ChakraProvider>
@@ -18,12 +18,13 @@ function App() {
         <Nav />
         <Route path="/" component={HomePage} />
       </Box>
-      <Route path="/carrega-alumnes" component={StudentsForm} />
+      <Route path="/Ingressar-alumnes" component={StudentsForm} />
       <Route path="/veure-alumnes" component={ShowAllAlumns} />
       <Route path="/success" component={Success} />
-      <Route path="/carrega-restaurants" component={RestaurantsForm} />
+      <Route path="/Ingressar-restaurants" component={RestaurantsForm} />
       <Route path="/veure-restaurants" component={ShowAllRestaurants} />
       <Route path="/success-restaurant" component={SuccessRest} />
+      <Route path="/edit-alumn/:id" component={EditStudentForm} />
     </ChakraProvider>
   );
 }
