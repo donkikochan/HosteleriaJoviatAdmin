@@ -25,9 +25,9 @@ const Success = () => {
         >
           Si voleu introduir un nou usuari, premeu el botó
         </Heading>
-        <Link to="/carrega-alumnes">
+        <Link to="/Ingressar-alumnes">
           <Button colorScheme="blackAlpha" mt={18} mb={18}>
-            Començar la càrrega
+            Començar el ingrés
           </Button>
         </Link>
       </VStack>
