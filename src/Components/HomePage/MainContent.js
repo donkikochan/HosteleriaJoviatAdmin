@@ -36,9 +36,9 @@ const MainContent = () => {
           JoviatApp
         </Heading>
         <HStack>
-        <Link to="/carrega-alumnes">
+        <Link to="/Ingressar-alumnes">
           <Button colorScheme="blue" mt={18}>
-            Carregar alumnes
+          Ingressar alumnes
           </Button>
         </Link>
         <Link to="/veure-alumnes">
@@ -48,9 +48,9 @@ const MainContent = () => {
         </Link>
         </HStack>
         <HStack>
-        <Link to="/carrega-restaurants">
+        <Link to="/Ingressar-restaurants">
           <Button colorScheme="blue" mt={18} mb={18}>
-            Carregar restaurants
+          Ingressar restaurants
           </Button>
         </Link>
         <Link to="/veure-restaurants">
