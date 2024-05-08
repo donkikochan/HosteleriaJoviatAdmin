@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   FormControl,
   FormLabel,
@@ -8,12 +8,20 @@ import {
   VStack,
   Box,
   Heading,
-  IconButton,
+  Select,
+  Checkbox,
 } from "@chakra-ui/react";
 import { useLocation } from "wouter";
-import { AddIcon } from "@chakra-ui/icons";
+import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
 
-import { getFirestore, setDoc, doc, collection } from "@firebase/firestore";
+import {
+  getFirestore,
+  setDoc,
+  doc,
+  collection,
+  getDocs,
+  getDoc,
+} from "@firebase/firestore";
 import { app } from "../../firebaseConfig";
 
 const RestaurantsForm = () => {
@@ -26,6 +34,16 @@ const RestaurantsForm = () => {
   const [foto, setFotos] = useState([""]);
   const [direccio, setDireccio] = useState("");
   const [descripcio, setDescripcio] = useState("");
+  const [users, setUsers] = useState([]);
+  const [selectedUsers, setSelectedUsers] = useState([
+    { userId: "", responsabilitat: "", propietari: false, anydeinici: "" },
+  ]);
+  const [responsabilitat, setResponsabilitat] = useState("");
+  const [propietari, setPropietari] = useState(false);
+  const [anydeinici, setAnydeinici] = useState("");
+  const [userInstagram, setUserInstagram] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [mobil, setMobil] = useState("");
   const [touchedFields, setTouchedFields] = useState({
     nom: false,
     tel: false,
@@ -36,8 +54,33 @@ const RestaurantsForm = () => {
     foto: false,
     direccio: false,
     descripcio: false,
+    selectedUser: false,
+    responsabilitat: false,
+    propietari: false,
+    userInstagram: false,
+    linkedin: false,
+    mobil: false,
+    anydeinici: false,
   });
   const [location, navigate] = useLocation();
+
+  useEffect(() => {
+    const fetchUsers = async () => {
+      const db = getFirestore(app);
+      const querySnapshot = await getDocs(collection(db, "users"));
+      const usersData = querySnapshot.docs.map((doc) => ({
+        id: doc.id,
+        userInstagram: "",
+        linkedin: "",
+        mobil: "",
+        ...doc.data(),
+      }));
+
+      setUsers(usersData);
+    };
+
+    fetchUsers();
+  }, []);
 
   const handleNomChange = (e) => {
     setNom(e.target.value);
@@ -62,14 +105,53 @@ const RestaurantsForm = () => {
     newFotos[index] = value;
     setFotos(newFotos);
   };
+
+  //Estoy probando, si no funciona volver a poner el codigo anterior
+
+  /**  const addFotoInput = () => {
+    const newFotos = [...foto, ""];
+    setFotos(newFotos);
+  };*/
   const addFotoInput = () => {
     setFotos([...foto, ""]);
   };
+
+  const removeFotoInput = (index) => {
+    setFotos((prevFotos) => prevFotos.filter((_, i) => i !== index));
+  };
+
+  const addNewWorker = () => {
+    setSelectedUsers((prevUsers) => [
+      ...prevUsers,
+      {
+        userId: "",
+        responsabilitat: "",
+        propietari: false,
+        anydeinici: "",
+        userInstagram: "",
+        linkedin: "",
+        mobil: "",
+      },
+    ]);
+  };
+
+  const removeWorker = (index) => {
+    setSelectedUsers((prevUsers) => prevUsers.filter((_, i) => i !== index));
+  };
+
   const handleDireccioChange = (e) => {
     setDireccio(e.target.value);
   };
   const handleDescripcioChange = (e) => {
     setDescripcio(e.target.value);
+  };
+  const handlePropietariChange = (e) => {
+    setPropietari(e.target.checked);
+  };
+  const handleUserChange = (index, field, value) => {
+    setSelectedUsers((prev) =>
+      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+    );
   };
 
   const handleBlur = (field) => {
@@ -81,55 +163,89 @@ const RestaurantsForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    // Convertir longitud y latitud a número
+
+    // Convertir y validar longitud y latitud
     const numLongitud = parseFloat(longitud);
     const numLatitud = parseFloat(latitud);
-
-    // Validar que los datos numéricos sean números reales
     if (isNaN(numLongitud) || isNaN(numLatitud)) {
       alert("La longitud y la latitud deben ser números válidos.");
       return;
     }
 
+    // Verificación de campos requeridos
+    const requiredFields = [
+      nom,
+      tel,
+      web,
+      instagram,
+      direccio,
+      descripcio,
+      ...foto, // Asegura que todas las fotos tienen URL
+    ];
+    if (requiredFields.some((field) => !field)) {
+      alert("Por favor, completa todos los campos obligatorios.");
+      return;
+    }
+
     if (
-      !nom ||
-      !tel ||
-      !web ||
-      !numLongitud ||
-      !numLatitud ||
-      !instagram ||
-      !foto ||
-      !direccio ||
-      !descripcio
+      selectedUsers.some(
+        (user) => !user.userId || !user.anydeinici || !user.responsabilitat
+      )
     ) {
-      alert("Error: Completa todos los campos obligatorios.");
-    } else {
-      try {
-        const db = getFirestore(app);
-        // Genera un nuevo ID de documento aleatorio para el restaurante
-        const newRestaurantRef = doc(collection(db, "Restaurant"));
+      alert("Por favor, completa todos los detalles de los trabajadores.");
+      return;
+    }
 
-        // Preparar el objeto del restaurante para Firestore
-        const restaurantData = {
-          nom,
-          tel,
-          web,
-          longitud: numLongitud,
-          latitud: numLatitud,
-          instagram,
-          foto,
-          direccio,
-          descripcio,
-        };
+    try {
+      const db = getFirestore(app);
+      const newRestaurantRef = doc(collection(db, "Restaurant"));
+      const restaurantData = {
+        nom,
+        tel,
+        web,
+        longitud: numLongitud,
+        latitud: numLatitud,
+        instagram,
+        foto,
+        direccio,
+        descripcio,
+      };
 
-        await setDoc(newRestaurantRef, restaurantData);
+      // Intenta guardar los datos del restaurante
+      await setDoc(newRestaurantRef, restaurantData);
 
-        // Redirigir al usuario a la página de éxito
-        // Verifica que estés utilizando el enrutador correcto y que "/success" sea una ruta válida en tu app
-        navigate("/success-restaurant");
-      } catch (error) {
-        alert("Error al crear el restaurante: " + error.message);
+      // Guardar datos de los trabajadores
+      for (const user of selectedUsers) {
+        const userSnap = await getDoc(doc(db, "users", user.userId));
+        if (userSnap.exists()) {
+          const userData = userSnap.data();
+
+          const alumnesRef = collection(
+            db,
+            "Restaurant",
+            newRestaurantRef.id,
+            "alumnes"
+          );
+
+          await setDoc(doc(alumnesRef), {
+            nom: `${userData.nom} ${userData.cognom}`,
+            image: userData.imageUrl,
+            correu: userData.email,
+            instagram: user.userInstagram,
+            linkedin: user.linkedin,
+            mobil: user.mobil,
+            responsabilitat: user.responsabilitat,
+            propietari: user.propietari,
+            anydeinici: user.anydeinici,
+          });
+        }
       }
+
+      console.log("Restaurante creado con éxito.");
+      navigate("/success-restaurant");
+    } catch (error) {
+      console.error("Error al crear el restaurante:", error);
+      alert("Error al crear el restaurante: " + error.message);
     }
   };
 
@@ -149,7 +265,7 @@ const RestaurantsForm = () => {
         </Heading>
       </VStack>
       <VStack as="form" onSubmit={handleSubmit}>
-        <FormControl mt={50} maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Nom del restaurant</FormLabel>
           <Input
             type="text"
@@ -165,7 +281,9 @@ const RestaurantsForm = () => {
           >
             Introdueix el nom del restaurant
           </FormHelperText>
+        </FormControl>
 
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Telèfon</FormLabel>
           <Input
             type="text"
@@ -181,7 +299,9 @@ const RestaurantsForm = () => {
           >
             Introdueix el telèfon.
           </FormHelperText>
+        </FormControl>
 
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Lloc web</FormLabel>
           <Input
             type="text"
@@ -197,7 +317,9 @@ const RestaurantsForm = () => {
           >
             Introdueix la url del lloc web.
           </FormHelperText>
+        </FormControl>
 
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Longitud</FormLabel>
           <Input
             type="text"
@@ -213,7 +335,9 @@ const RestaurantsForm = () => {
           >
             Introdueix la longitud geográfica.
           </FormHelperText>
+        </FormControl>
 
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Latitud</FormLabel>
           <Input
             type="text"
@@ -229,7 +353,9 @@ const RestaurantsForm = () => {
           >
             Introdueix la latitud geográfica.
           </FormHelperText>
+        </FormControl>
 
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Instagram</FormLabel>
           <Input
             type="text"
@@ -245,18 +371,31 @@ const RestaurantsForm = () => {
           >
             Introdueix l'instagram del restaurant.
           </FormHelperText>
+        </FormControl>
 
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Fotos</FormLabel>
           {foto.map((url, index) => (
-            <Input
-              key={index}
-              type="text"
-              value={url}
-              onChange={(e) => handleFotosChange(index, e.target.value)}
-              placeholder="URL de la foto"
-              onBlur={() => handleBlur("foto")}
-              isInvalid={touchedFields.foto && !url}
-            />
+            <Box key={index}>
+              <Input
+                key={index}
+                type="text"
+                value={url}
+                onChange={(e) => handleFotosChange(index, e.target.value)}
+                placeholder="URL de la foto"
+                onBlur={() => handleBlur("foto")}
+                isInvalid={touchedFields.foto && !url}
+              />
+
+              <Button
+                position={"absolute"}
+                right={0}
+                colorScheme="red"
+                onClick={() => removeFotoInput(index)}
+              >
+                <DeleteIcon />
+              </Button>
+            </Box>
           ))}
           <Button
             onClick={() => addFotoInput()}
@@ -275,7 +414,9 @@ const RestaurantsForm = () => {
           >
             Introdueix les URLs de les fotos del restaurant.
           </FormHelperText>
+        </FormControl>
 
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Direcció</FormLabel>
           <Input
             type="text"
@@ -291,7 +432,9 @@ const RestaurantsForm = () => {
           >
             Introdueix la direcció del restaurant.
           </FormHelperText>
+        </FormControl>
 
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Descripció</FormLabel>
           <Input
             type="text"
@@ -307,11 +450,113 @@ const RestaurantsForm = () => {
           >
             Introdueix la descripció del restaurant.
           </FormHelperText>
+        </FormControl>
 
-          <Button mt={5} mb={20} colorScheme="blue" type="submit">
-            Carregar dades
+        <FormControl mb={5} maxW={600}>
+          <FormLabel my={7}>Afegir treballadors</FormLabel>
+          {selectedUsers.map((user, index) => (
+            <Box key={index}>
+              <FormControl isRequired>
+                <FormLabel>Seleccioneu un usuari</FormLabel>
+                <Select
+                  placeholder="Seleccioneu un usuari"
+                  onChange={(e) =>
+                    handleUserChange(index, "userId", e.target.value)
+                  }
+                  value={user.userId}
+                >
+                  {users.map((option) => (
+                    <option key={option.id} value={option.id}>
+                      {option.nom + " " + option.cognom}
+                    </option>
+                  ))}
+                </Select>
+              </FormControl>
+              <FormControl mt={5} isRequired>
+                <FormLabel>Any de inici</FormLabel>
+                <Input
+                  placeholder="Any de inici"
+                  type="text"
+                  value={user.anydeinici}
+                  onChange={(e) =>
+                    handleUserChange(index, "anydeinici", e.target.value)
+                  }
+                />
+              </FormControl>
+              <FormControl mt={5} isRequired>
+                <FormLabel>Responsabilitat</FormLabel>
+                <Input
+                  placeholder="Responsabilitat"
+                  type="text"
+                  value={user.responsabilitat}
+                  onChange={(e) =>
+                    handleUserChange(index, "responsabilitat", e.target.value)
+                  }
+                />
+              </FormControl>
+              <FormControl mt={5} isRequired>
+                <FormLabel>Instagram</FormLabel>
+                <Input
+                  placeholder="Instagram"
+                  type="text"
+                  value={user.userInstagram || ""}
+                  onChange={(e) =>
+                    handleUserChange(index, "userInstagram", e.target.value)
+                  }
+                />
+              </FormControl>
+              <FormControl mt={5} isRequired>
+                <FormLabel>Linkedin</FormLabel>
+                <Input
+                  placeholder="Linkedin"
+                  type="text"
+                  value={user.linkedin || ""}
+                  onChange={(e) =>
+                    handleUserChange(index, "linkedin", e.target.value)
+                  }
+                />
+              </FormControl>
+              <FormControl mt={5} isRequired>
+                <FormLabel>Móvil</FormLabel>
+                <Input
+                  placeholder="Móvil"
+                  type="text"
+                  value={user.mobil || ""}
+                  onChange={(e) =>
+                    handleUserChange(index, "mobil", e.target.value)
+                  }
+                />
+              </FormControl>
+              <FormControl mt={5}>
+                <FormLabel>¿És propietari?</FormLabel>
+                <Checkbox
+                  mb={10}
+                  isChecked={user.propietari}
+                  onChange={(e) =>
+                    handleUserChange(index, "propietari", e.target.checked)
+                  }
+                >
+                  És propietari
+                </Checkbox>
+              </FormControl>
+              <Button
+                position={"absolute"}
+                right={0}
+                colorScheme="red"
+                onClick={() => removeWorker(index)}
+              >
+                <DeleteIcon />
+              </Button>
+            </Box>
+          ))}
+          <Button colorScheme="blue" onClick={addNewWorker}>
+            <AddIcon /> Afegir més treballadors
           </Button>
         </FormControl>
+
+        <Button mt={5} mb={20} colorScheme="blue" type="submit">
+          Carregar dades
+        </Button>
       </VStack>
     </Box>
   );
