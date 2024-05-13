@@ -37,6 +37,9 @@ const StudentsForm = () => {
   const [academicStatus, setacademicStatus] = useState("");
   const [birth, setbirth] = useState("");
   const [username, setusername] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [mobile, setMobile] = useState("");
   const [touchedFields, setTouchedFields] = useState({
     nom: false,
     cognom: false,
@@ -44,7 +47,7 @@ const StudentsForm = () => {
     contrasenya: false,
     academicStatus: false,
     birth: false,
-    username: false,
+    username: false
   });
   const [location, navigate] = useLocation();
 
@@ -111,6 +114,9 @@ const StudentsForm = () => {
           academicStatus,
           birth,
           username,
+          linkedin,
+          instagram,
+          mobile,
           imageUrl: defaultImageUrl,
           email: user.email,
         });
@@ -248,6 +254,35 @@ const StudentsForm = () => {
           >
             Entre el nom d'usuari.
           </FormHelperText>
+
+          <FormLabel mt={5}>LinkedIn</FormLabel>
+          <Input
+          value={linkedin}
+          onChange={(e) => setLinkedin(e.target.value)}
+          onBlur={() => handleBlur("linkedin")}
+          placeholder="LinkedIn"
+          isInvalid={touchedFields.linkedin && linkedin === ""}
+        />
+
+        <FormLabel mt={5}>Instagram</FormLabel>
+        <Input
+          value={instagram}
+          onChange={(e) => setInstagram(e.target.value)}
+          onBlur={() => handleBlur("instagram")}
+          placeholder="Instagram"
+          isInvalid={touchedFields.instagram && instagram === ""}
+        />
+
+        <FormLabel mt={5}>Mòbil</FormLabel>
+        <Input
+          type="tel"
+          value={mobile}
+          onChange={(e) => setMobile(e.target.value)}
+          onBlur={() => handleBlur("mobile")}
+          placeholder="Mòbil"
+          isInvalid={touchedFields.mobile && mobile === ""}
+        />
+
 
           <Button mt={5} mb={20} colorScheme="blue" type="submit">
             Carregar
