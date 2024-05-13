@@ -1,11 +1,23 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import { useRoute, useLocation } from "wouter";
 import {
-  Box, FormControl, FormLabel, Input, Button, VStack, Select, useToast,
-  AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogHeader, AlertDialogContent, AlertDialogOverlay
-} from '@chakra-ui/react';
-import { doc, getFirestore, getDoc, setDoc } from 'firebase/firestore';
-import { app } from '../../firebaseConfig';
+  Box,
+  FormControl,
+  FormLabel,
+  Input,
+  Button,
+  VStack,
+  Select,
+  useToast,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+} from "@chakra-ui/react";
+import { doc, getFirestore, getDoc, setDoc } from "firebase/firestore";
+import { app } from "../../firebaseConfig";
 
 const EditStudentForm = () => {
   const [, params] = useRoute("/edit-alumn/:id");
@@ -24,33 +36,35 @@ const EditStudentForm = () => {
   useEffect(() => {
     const db = getFirestore(app);
     const studentDocRef = doc(db, "users", studentId);
-    getDoc(studentDocRef).then(docSnap => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setNom(data.nom || "");
-        setCognom(data.cognom || "");
-        setAcademicStatus(data.academicStatus || "");
-        setBirth(data.birth || "");
-        setUsername(data.username || "");
-      } else {
+    getDoc(studentDocRef)
+      .then((docSnap) => {
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setNom(data.nom || "");
+          setCognom(data.cognom || "");
+          setAcademicStatus(data.academicStatus || "");
+          setBirth(data.birth || "");
+          setUsername(data.username || "");
+        } else {
+          toast({
+            title: "Error",
+            description: "No s'ha trobat l'alumne.",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+        }
+      })
+      .catch((error) => {
+        console.error("Error carregant dades de l'alumne:", error);
         toast({
           title: "Error",
-          description: "No s'ha trobat l'alumne.",
+          description: "Error en carregar les dades de l'alumne.",
           status: "error",
           duration: 5000,
           isClosable: true,
         });
-      }
-    }).catch(error => {
-      console.error("Error carregant dades de l'alumne:", error);
-      toast({
-        title: "Error",
-        description: "Error en carregar les dades de l'alumne.",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
       });
-    });
   }, [studentId, toast]);
 
   const handleUpdate = async () => {
@@ -58,7 +72,11 @@ const EditStudentForm = () => {
     const studentDocRef = doc(db, "users", studentId);
 
     try {
-      await setDoc(studentDocRef, { nom, cognom, academicStatus, birth, username }, { merge: true });
+      await setDoc(
+        studentDocRef,
+        { nom, cognom, academicStatus, birth, username },
+        { merge: true }
+      );
       toast({
         title: "Alumne Actualitzat",
         description: "Les dades de l'alumne han estat actualitzades amb èxit.",
@@ -84,14 +102,13 @@ const EditStudentForm = () => {
     setIsOpen(true); // Show confirmation dialog
   };
 
-
   return (
     <Box>
       <VStack bg={"white"} width={"100%"} pt={150}>
         <FormLabel
           as="h1"
           fontFamily="'Hanken Grotesk', Arial, sans-serif"
-          fontSize="4xl" // Aquí ajustamos el tamaño de la fuente
+          fontSize="4xl"
           w={{ base: "90%", md: "600px" }}
           maxW={600}
           mb={5}
@@ -106,18 +123,21 @@ const EditStudentForm = () => {
           <Input
             type="text"
             value={nom}
-            onChange={e => setNom(e.target.value)}
+            onChange={(e) => setNom(e.target.value)}
             placeholder="Nom"
           />
           <FormLabel mt={5}>Cognom</FormLabel>
           <Input
             type="text"
             value={cognom}
-            onChange={e => setCognom(e.target.value)}
+            onChange={(e) => setCognom(e.target.value)}
             placeholder="Cognom"
           />
           <FormLabel mt={5}>Estat acadèmic</FormLabel>
-          <Select value={academicStatus} onChange={e => setAcademicStatus(e.target.value)}>
+          <Select
+            value={academicStatus}
+            onChange={(e) => setAcademicStatus(e.target.value)}
+          >
             <option value="">Selecciona una opció</option>
             <option value="Alumn">Alumne</option>
             <option value="Ex-alumn">Ex-alumne</option>
@@ -126,13 +146,13 @@ const EditStudentForm = () => {
           <Input
             type="date"
             value={birth}
-            onChange={e => setBirth(e.target.value)}
+            onChange={(e) => setBirth(e.target.value)}
             placeholder="Data de naixement"
           />
           <FormLabel mt={5}>Nom d'usuari</FormLabel>
           <Input
             value={username}
-            onChange={e => setUsername(e.target.value)}
+            onChange={(e) => setUsername(e.target.value)}
             placeholder="Nom d'usuari"
           />
           <Button mt={5} mb={20} colorScheme="blue" type="submit">
@@ -140,8 +160,8 @@ const EditStudentForm = () => {
           </Button>
         </FormControl>
       </VStack>
-       {/* Confirmation Dialog */}
-       <AlertDialog
+      {/* Confirmation Dialog */}
+      <AlertDialog
         isOpen={isOpen}
         leastDestructiveRef={cancelRef}
         onClose={onClose}

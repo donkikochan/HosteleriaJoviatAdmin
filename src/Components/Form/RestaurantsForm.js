@@ -457,7 +457,7 @@ const RestaurantsForm = () => {
           {selectedUsers.map((user, index) => (
             <Box key={index}>
               <FormControl isRequired>
-                <FormLabel>Seleccioneu un usuari</FormLabel>
+                <FormLabel mt={25}>Seleccioneu un usuari</FormLabel>
                 <Select
                   placeholder="Seleccioneu un usuari"
                   onChange={(e) =>
