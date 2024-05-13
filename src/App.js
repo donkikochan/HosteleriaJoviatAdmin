@@ -10,7 +10,9 @@ import RestaurantsForm from "./Components/Form/RestaurantsForm";
 import SuccessRest from "./Components/Form/SuccessRest";
 import ShowAllAlumns from "./Components/ShowAllAlumns/ShowAllAlumns";
 import ShowAllRestaurants from "./Components/ShowAllRestaurants/ShowAllRestaurants";
-import EditStudentForm from "./Components/Form/EditStudentForm"
+import EditStudentForm from "./Components/Form/EditStudentForm";
+import EditRestaurantForm from "./Components/Form/EditRestaurantForm";
+
 function App() {
   return (
     <ChakraProvider>
@@ -25,6 +27,7 @@ function App() {
       <Route path="/veure-restaurants" component={ShowAllRestaurants} />
       <Route path="/success-restaurant" component={SuccessRest} />
       <Route path="/edit-alumn/:id" component={EditStudentForm} />
+      <Route path="/edit-restaurant/:id" component={EditRestaurantForm} />
     </ChakraProvider>
   );
 }
