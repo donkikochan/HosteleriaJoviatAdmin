@@ -57,9 +57,6 @@ const RestaurantsForm = () => {
     selectedUser: false,
     responsabilitat: false,
     propietari: false,
-    userInstagram: false,
-    linkedin: false,
-    mobil: false,
     anydeinici: false,
   });
   const [location, navigate] = useLocation();
@@ -70,9 +67,6 @@ const RestaurantsForm = () => {
       const querySnapshot = await getDocs(collection(db, "users"));
       const usersData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        userInstagram: "",
-        linkedin: "",
-        mobil: "",
         ...doc.data(),
       }));
 
@@ -128,9 +122,6 @@ const RestaurantsForm = () => {
         responsabilitat: "",
         propietari: false,
         anydeinici: "",
-        userInstagram: "",
-        linkedin: "",
-        mobil: "",
       },
     ]);
   };
@@ -231,9 +222,9 @@ const RestaurantsForm = () => {
             nom: `${userData.nom} ${userData.cognom}`,
             image: userData.imageUrl,
             correu: userData.email,
-            instagram: user.userInstagram,
-            linkedin: user.linkedin,
-            mobil: user.mobil,
+            instagram: userData.instagram,
+            linkedin: userData.linkedin,
+            mobil: userData.mobil,
             responsabilitat: user.responsabilitat,
             propietari: user.propietari,
             anydeinici: user.anydeinici,
@@ -494,39 +485,7 @@ const RestaurantsForm = () => {
                   }
                 />
               </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Instagram</FormLabel>
-                <Input
-                  placeholder="Instagram"
-                  type="text"
-                  value={user.userInstagram || ""}
-                  onChange={(e) =>
-                    handleUserChange(index, "userInstagram", e.target.value)
-                  }
-                />
-              </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Linkedin</FormLabel>
-                <Input
-                  placeholder="Linkedin"
-                  type="text"
-                  value={user.linkedin || ""}
-                  onChange={(e) =>
-                    handleUserChange(index, "linkedin", e.target.value)
-                  }
-                />
-              </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Móvil</FormLabel>
-                <Input
-                  placeholder="Móvil"
-                  type="text"
-                  value={user.mobil || ""}
-                  onChange={(e) =>
-                    handleUserChange(index, "mobil", e.target.value)
-                  }
-                />
-              </FormControl>
+
               <FormControl mt={5}>
                 <FormLabel>¿És propietari?</FormLabel>
                 <Checkbox
