@@ -29,6 +29,9 @@ const EditStudentForm = () => {
   const [academicStatus, setAcademicStatus] = useState("");
   const [birth, setBirth] = useState("");
   const [username, setUsername] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [mobile, setMobile] = useState("");
   const [isOpen, setIsOpen] = useState(false);
   const onClose = () => setIsOpen(false);
   const cancelRef = useRef();
@@ -45,6 +48,9 @@ const EditStudentForm = () => {
           setAcademicStatus(data.academicStatus || "");
           setBirth(data.birth || "");
           setUsername(data.username || "");
+          setLinkedin(data.linkedin || "");  
+          setInstagram(data.instagram || "");  
+          setMobile(data.mobile || "");  
         } else {
           toast({
             title: "Error",
@@ -74,7 +80,7 @@ const EditStudentForm = () => {
     try {
       await setDoc(
         studentDocRef,
-        { nom, cognom, academicStatus, birth, username },
+        { nom, cognom, academicStatus, birth, username, linkedin, instagram, mobile },
         { merge: true }
       );
       toast({
@@ -154,6 +160,27 @@ const EditStudentForm = () => {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Nom d'usuari"
+          />
+          <FormLabel mt={5}>LinkedIn</FormLabel>
+          <Input
+            type="text"
+            value={linkedin}
+            onChange={(e) => setLinkedin(e.target.value)}
+            placeholder="LinkedIn"
+          />
+          <FormLabel mt={5}>Instagram</FormLabel>
+          <Input
+            type="text"
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            placeholder="Instagram"
+          />
+          <FormLabel mt={5}>Móvil</FormLabel>
+          <Input
+            type="tel"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            placeholder="Móvil"
           />
           <Button mt={5} mb={20} colorScheme="blue" type="submit">
             Guardar Canvis
