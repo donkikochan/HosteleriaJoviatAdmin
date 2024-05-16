@@ -97,7 +97,7 @@ const StudentsForm = () => {
         "https://cdn.icon-icons.com/icons2/1369/PNG/512/-person_90382.png";
 
       try {
-        // Crear usuario en Firebase Authentication
+        // se crea usuario en Firebase Authentication
         const auth = getAuth(app);
         const userCredential = await createUserWithEmailAndPassword(
           auth,
@@ -106,7 +106,7 @@ const StudentsForm = () => {
         );
         const user = userCredential.user;
 
-        // Guardar otros datos en Firestore
+        // se guardan otros datos en Firestore
         const db = getFirestore(app);
         await setDoc(doc(db, "users", user.uid), {
           nom,
@@ -121,10 +121,10 @@ const StudentsForm = () => {
           email: user.email,
         });
 
-        // Redirigir al usuario a la página de éxito
+        // se redirige al usuario a la página de éxito
         navigate("/success");
       } catch (error) {
-        // Manejar errores de Firebase Authentication
+        // Manejo de  errores de Firebase Authentication
         alert("Error al crear usuario: " + (error && error.message));
       }
     }
@@ -146,22 +146,26 @@ const StudentsForm = () => {
         </Heading>
       </VStack>
       <VStack as="form" onSubmit={handleSubmit}>
-        <FormControl mt={50} maxW={600} isRequired>
-          <FormLabel mt={5}>Nom</FormLabel>
-          <Input
-            type="text"
-            value={nom}
-            onChange={handleNomChange}
-            onBlur={() => handleBlur("nom")}
-            placeholder="Nom"
-            isInvalid={touchedFields.nom && nom === ""}
-          />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.nom && nom === "" ? "red" : "gray"}
-          >
-            Entre el nom.
-          </FormHelperText>
+       
+      <FormControl maxW={600} isRequired>
+        <FormLabel mt={5}>Nom</FormLabel>
+        <Input
+          type="text"
+          value={nom}
+          onChange={handleNomChange}
+          onBlur={() => handleBlur("nom")}
+          placeholder="Nom"
+          isInvalid={touchedFields.nom && nom === ""}
+        />
+        <FormHelperText
+          mt={1}
+          color={touchedFields.nom && nom === "" ? "red" : "gray"}
+        >
+          Entre el nom.
+        </FormHelperText>
+      </FormControl>
+
+      <FormControl  maxW={600} isRequired>
           <FormLabel mt={5}>Cognom</FormLabel>
           <Input
             type="text"
@@ -177,6 +181,9 @@ const StudentsForm = () => {
           >
             Entre el cognom.
           </FormHelperText>
+          </FormControl>
+
+          <FormControl   maxW={600} isRequired>
           <FormLabel mt={5}>Correu</FormLabel>
           <Input
             type="email"
@@ -192,6 +199,9 @@ const StudentsForm = () => {
           >
             Entre el correu.
           </FormHelperText>
+          </FormControl>
+
+          <FormControl  maxW={600} isRequired>
           <FormLabel mt={5}>Contrasenya</FormLabel>
           <Input
             type="password"
@@ -209,6 +219,9 @@ const StudentsForm = () => {
           >
             Entre la contrasenya.
           </FormHelperText>
+          </FormControl>
+
+          <FormControl  maxW={600} isRequired>
           <FormLabel mt={5}>Estat academic</FormLabel>
           <Select value={academicStatus} onChange={handleacademicStatusChange}>
             <option value="">Selecciona una opción</option>
@@ -225,6 +238,9 @@ const StudentsForm = () => {
           >
             Seleccione l'estat academic.
           </FormHelperText>
+          </FormControl>
+
+          <FormControl  maxW={600} isRequired>
           <FormLabel mt={5}>Data de naixement</FormLabel>
           <Input
             type="date"
@@ -234,12 +250,15 @@ const StudentsForm = () => {
             placeholder="Data de naixement"
             isInvalid={touchedFields.birth && birth === ""}
           />
-          <FormHelperText
+          <FormHelperText 
             mt={1}
             color={touchedFields.birth && birth === "" ? "red" : "gray"}
           >
             Seleccione la data de naixement.
           </FormHelperText>
+          </FormControl>
+
+          <FormControl  maxW={600} isRequired>
           <FormLabel mt={5}>Nom d'usuari</FormLabel>
           <Input
             value={username}
@@ -254,7 +273,9 @@ const StudentsForm = () => {
           >
             Entre el nom d'usuari.
           </FormHelperText>
+          </FormControl>
 
+          <FormControl maxW={600}>
           <FormLabel mt={5}>LinkedIn</FormLabel>
           <Input
           value={linkedin}
@@ -263,7 +284,9 @@ const StudentsForm = () => {
           placeholder="LinkedIn"
           isInvalid={touchedFields.linkedin && linkedin === ""}
         />
+          </FormControl>
 
+          <FormControl maxW={600}>
         <FormLabel mt={5}>Instagram</FormLabel>
         <Input
           value={instagram}
@@ -272,7 +295,9 @@ const StudentsForm = () => {
           placeholder="Instagram"
           isInvalid={touchedFields.instagram && instagram === ""}
         />
+        </FormControl>
 
+        <FormControl maxW={600}>
         <FormLabel mt={5}>Mòbil</FormLabel>
         <Input
           type="tel"
@@ -282,12 +307,12 @@ const StudentsForm = () => {
           placeholder="Mòbil"
           isInvalid={touchedFields.mobile && mobile === ""}
         />
-
+        </FormControl>
 
           <Button mt={5} mb={20} colorScheme="blue" type="submit">
             Carregar
           </Button>
-        </FormControl>
+       
       </VStack>
     </Box>
   );

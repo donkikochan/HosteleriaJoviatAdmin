@@ -132,6 +132,9 @@ const EditStudentForm = () => {
             onChange={(e) => setNom(e.target.value)}
             placeholder="Nom"
           />
+          </FormControl>
+
+          <FormControl  maxW={600} isRequired>
           <FormLabel mt={5}>Cognom</FormLabel>
           <Input
             type="text"
@@ -139,6 +142,9 @@ const EditStudentForm = () => {
             onChange={(e) => setCognom(e.target.value)}
             placeholder="Cognom"
           />
+          </FormControl>
+
+          <FormControl  maxW={600} isRequired>
           <FormLabel mt={5}>Estat acadèmic</FormLabel>
           <Select
             value={academicStatus}
@@ -148,6 +154,9 @@ const EditStudentForm = () => {
             <option value="Alumn">Alumne</option>
             <option value="Ex-alumn">Ex-alumne</option>
           </Select>
+          </FormControl>
+
+          <FormControl  maxW={600} isRequired>
           <FormLabel mt={5}>Data de naixement</FormLabel>
           <Input
             type="date"
@@ -155,12 +164,18 @@ const EditStudentForm = () => {
             onChange={(e) => setBirth(e.target.value)}
             placeholder="Data de naixement"
           />
+          </FormControl>
+
+          <FormControl  maxW={600} isRequired>
           <FormLabel mt={5}>Nom d'usuari</FormLabel>
           <Input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Nom d'usuari"
           />
+          </FormControl>
+
+          <FormControl  maxW={600} >
           <FormLabel mt={5}>LinkedIn</FormLabel>
           <Input
             type="text"
@@ -168,6 +183,9 @@ const EditStudentForm = () => {
             onChange={(e) => setLinkedin(e.target.value)}
             placeholder="LinkedIn"
           />
+          </FormControl>
+
+          <FormControl  maxW={600} >
           <FormLabel mt={5}>Instagram</FormLabel>
           <Input
             type="text"
@@ -175,6 +193,9 @@ const EditStudentForm = () => {
             onChange={(e) => setInstagram(e.target.value)}
             placeholder="Instagram"
           />
+          </FormControl>
+
+          <FormControl  maxW={600} >
           <FormLabel mt={5}>Móvil</FormLabel>
           <Input
             type="tel"
@@ -182,12 +203,14 @@ const EditStudentForm = () => {
             onChange={(e) => setMobile(e.target.value)}
             placeholder="Móvil"
           />
+          </FormControl>
+
           <Button mt={5} mb={20} colorScheme="blue" type="submit">
             Guardar Canvis
           </Button>
-        </FormControl>
+        
       </VStack>
-      {/* Confirmation Dialog */}
+   
       <AlertDialog
         isOpen={isOpen}
         leastDestructiveRef={cancelRef}
