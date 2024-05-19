@@ -47,7 +47,7 @@ const StudentsForm = () => {
     contrasenya: false,
     academicStatus: false,
     birth: false,
-    username: false
+    username: false,
   });
   const [location, navigate] = useLocation();
 
@@ -146,26 +146,25 @@ const StudentsForm = () => {
         </Heading>
       </VStack>
       <VStack as="form" onSubmit={handleSubmit}>
-       
-      <FormControl maxW={600} isRequired>
-        <FormLabel mt={5}>Nom</FormLabel>
-        <Input
-          type="text"
-          value={nom}
-          onChange={handleNomChange}
-          onBlur={() => handleBlur("nom")}
-          placeholder="Nom"
-          isInvalid={touchedFields.nom && nom === ""}
-        />
-        <FormHelperText
-          mt={1}
-          color={touchedFields.nom && nom === "" ? "red" : "gray"}
-        >
-          Entre el nom.
-        </FormHelperText>
-      </FormControl>
+        <FormControl maxW={600} isRequired>
+          <FormLabel mt={5}>Nom</FormLabel>
+          <Input
+            type="text"
+            value={nom}
+            onChange={handleNomChange}
+            onBlur={() => handleBlur("nom")}
+            placeholder="Nom"
+            isInvalid={touchedFields.nom && nom === ""}
+          />
+          <FormHelperText
+            mt={1}
+            color={touchedFields.nom && nom === "" ? "red" : "gray"}
+          >
+            Entre el nom.
+          </FormHelperText>
+        </FormControl>
 
-      <FormControl  maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Cognom</FormLabel>
           <Input
             type="text"
@@ -181,9 +180,9 @@ const StudentsForm = () => {
           >
             Entre el cognom.
           </FormHelperText>
-          </FormControl>
+        </FormControl>
 
-          <FormControl   maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Correu</FormLabel>
           <Input
             type="email"
@@ -199,9 +198,9 @@ const StudentsForm = () => {
           >
             Entre el correu.
           </FormHelperText>
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Contrasenya</FormLabel>
           <Input
             type="password"
@@ -219,9 +218,9 @@ const StudentsForm = () => {
           >
             Entre la contrasenya.
           </FormHelperText>
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Estat academic</FormLabel>
           <Select value={academicStatus} onChange={handleacademicStatusChange}>
             <option value="">Selecciona una opción</option>
@@ -238,9 +237,9 @@ const StudentsForm = () => {
           >
             Seleccione l'estat academic.
           </FormHelperText>
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Data de naixement</FormLabel>
           <Input
             type="date"
@@ -250,15 +249,15 @@ const StudentsForm = () => {
             placeholder="Data de naixement"
             isInvalid={touchedFields.birth && birth === ""}
           />
-          <FormHelperText 
+          <FormHelperText
             mt={1}
             color={touchedFields.birth && birth === "" ? "red" : "gray"}
           >
             Seleccione la data de naixement.
           </FormHelperText>
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Nom d'usuari</FormLabel>
           <Input
             value={username}
@@ -273,46 +272,45 @@ const StudentsForm = () => {
           >
             Entre el nom d'usuari.
           </FormHelperText>
-          </FormControl>
-
-          <FormControl maxW={600}>
-          <FormLabel mt={5}>LinkedIn</FormLabel>
-          <Input
-          value={linkedin}
-          onChange={(e) => setLinkedin(e.target.value)}
-          onBlur={() => handleBlur("linkedin")}
-          placeholder="LinkedIn"
-          isInvalid={touchedFields.linkedin && linkedin === ""}
-        />
-          </FormControl>
-
-          <FormControl maxW={600}>
-        <FormLabel mt={5}>Instagram</FormLabel>
-        <Input
-          value={instagram}
-          onChange={(e) => setInstagram(e.target.value)}
-          onBlur={() => handleBlur("instagram")}
-          placeholder="Instagram"
-          isInvalid={touchedFields.instagram && instagram === ""}
-        />
         </FormControl>
 
         <FormControl maxW={600}>
-        <FormLabel mt={5}>Mòbil</FormLabel>
-        <Input
-          type="tel"
-          value={mobile}
-          onChange={(e) => setMobile(e.target.value)}
-          onBlur={() => handleBlur("mobile")}
-          placeholder="Mòbil"
-          isInvalid={touchedFields.mobile && mobile === ""}
-        />
+          <FormLabel mt={5}>LinkedIn</FormLabel>
+          <Input
+            value={linkedin}
+            onChange={(e) => setLinkedin(e.target.value)}
+            onBlur={() => handleBlur("linkedin")}
+            placeholder="LinkedIn"
+            isInvalid={touchedFields.linkedin && linkedin === ""}
+          />
         </FormControl>
 
-          <Button mt={5} mb={20} colorScheme="blue" type="submit">
-            Carregar
-          </Button>
-       
+        <FormControl maxW={600}>
+          <FormLabel mt={5}>Instagram</FormLabel>
+          <Input
+            value={instagram}
+            onChange={(e) => setInstagram(e.target.value)}
+            onBlur={() => handleBlur("instagram")}
+            placeholder="Inseriu nom d'usuari sense @"
+            isInvalid={touchedFields.instagram && instagram === ""}
+          />
+        </FormControl>
+
+        <FormControl maxW={600}>
+          <FormLabel mt={5}>Mòbil</FormLabel>
+          <Input
+            type="tel"
+            value={mobile}
+            onChange={(e) => setMobile(e.target.value)}
+            onBlur={() => handleBlur("mobile")}
+            placeholder="Mòbil"
+            isInvalid={touchedFields.mobile && mobile === ""}
+          />
+        </FormControl>
+
+        <Button mt={5} mb={20} colorScheme="blue" type="submit">
+          Carregar
+        </Button>
       </VStack>
     </Box>
   );

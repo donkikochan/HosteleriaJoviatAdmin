@@ -206,7 +206,7 @@ const RestaurantsForm = () => {
 
           const alumneData = {
             nom: `${userData.nom} ${userData.cognom}`,
-            image: userData.imageUrl || "URL predeterminada",
+            image: userData.imageUrl,
             correu: userData.email,
             responsabilitat: user.responsabilitat,
             propietari: user.propietari,
