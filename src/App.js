@@ -12,22 +12,37 @@ import ShowAllAlumns from "./Components/ShowAllAlumns/ShowAllAlumns";
 import ShowAllRestaurants from "./Components/ShowAllRestaurants/ShowAllRestaurants";
 import EditStudentForm from "./Components/Form/EditStudentForm";
 import EditRestaurantForm from "./Components/Form/EditRestaurantForm";
+import LoginForm from "./Components/Form/Login";
+import { AuthProvider } from "./Components/AuthContext";
+import PrivateRoute from "./Components/PrivateRoute";
 
 function App() {
   return (
     <ChakraProvider>
-      <Box as="header">
-        <Nav />
-        <Route path="/" component={HomePage} />
-      </Box>
-      <Route path="/Ingressar-alumnes" component={StudentsForm} />
-      <Route path="/veure-alumnes" component={ShowAllAlumns} />
-      <Route path="/success" component={Success} />
-      <Route path="/Ingressar-restaurants" component={RestaurantsForm} />
-      <Route path="/veure-restaurants" component={ShowAllRestaurants} />
-      <Route path="/success-restaurant" component={SuccessRest} />
-      <Route path="/edit-alumn/:id" component={EditStudentForm} />
-      <Route path="/edit-restaurant/:id" component={EditRestaurantForm} />
+      <AuthProvider>
+        <Box as="header">
+          <Nav />
+          <Route path="/" component={LoginForm} />
+        </Box>
+        <PrivateRoute path="/home" component={HomePage} />
+        <PrivateRoute path="/Ingressar-alumnes" component={StudentsForm} />
+        <PrivateRoute path="/veure-alumnes" component={ShowAllAlumns} />
+        <PrivateRoute path="/success" component={Success} />
+        <PrivateRoute
+          path="/Ingressar-restaurants"
+          component={RestaurantsForm}
+        />
+        <PrivateRoute
+          path="/veure-restaurants"
+          component={ShowAllRestaurants}
+        />
+        <PrivateRoute path="/success-restaurant" component={SuccessRest} />
+        <PrivateRoute path="/edit-alumn/:id" component={EditStudentForm} />
+        <PrivateRoute
+          path="/edit-restaurant/:id"
+          component={EditRestaurantForm}
+        />
+      </AuthProvider>
     </ChakraProvider>
   );
 }

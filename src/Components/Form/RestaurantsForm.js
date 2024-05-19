@@ -57,9 +57,6 @@ const RestaurantsForm = () => {
     selectedUser: false,
     responsabilitat: false,
     propietari: false,
-    userInstagram: false,
-    linkedin: false,
-    mobil: false,
     anydeinici: false,
   });
   const [location, navigate] = useLocation();
@@ -70,9 +67,6 @@ const RestaurantsForm = () => {
       const querySnapshot = await getDocs(collection(db, "users"));
       const usersData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
-        userInstagram: "",
-        linkedin: "",
-        mobil: "",
         ...doc.data(),
       }));
 
@@ -106,12 +100,6 @@ const RestaurantsForm = () => {
     setFotos(newFotos);
   };
 
-  //Estoy probando, si no funciona volver a poner el codigo anterior
-
-  /**  const addFotoInput = () => {
-    const newFotos = [...foto, ""];
-    setFotos(newFotos);
-  };*/
   const addFotoInput = () => {
     setFotos([...foto, ""]);
   };
@@ -128,9 +116,6 @@ const RestaurantsForm = () => {
         responsabilitat: "",
         propietari: false,
         anydeinici: "",
-        userInstagram: "",
-        linkedin: "",
-        mobil: "",
       },
     ]);
   };
@@ -173,16 +158,8 @@ const RestaurantsForm = () => {
     }
 
     // Verificación de campos requeridos
-    const requiredFields = [
-      nom,
-      tel,
-      web,
-      instagram,
-      direccio,
-      descripcio,
-      ...foto, // Asegura que todas las fotos tienen URL
-    ];
-    if (requiredFields.some((field) => !field)) {
+    const requiredFields = [nom, tel, web, instagram, direccio, descripcio];
+    if (requiredFields.some((field) => !field) || foto.every((f) => !f)) {
       alert("Por favor, completa todos los campos obligatorios.");
       return;
     }
@@ -192,7 +169,7 @@ const RestaurantsForm = () => {
         (user) => !user.userId || !user.anydeinici || !user.responsabilitat
       )
     ) {
-      alert("Por favor, completa todos los detalles de los trabajadores.");
+      alert("Por favor, completa todos los detalles de los treballadors.");
       return;
     }
 
@@ -211,10 +188,10 @@ const RestaurantsForm = () => {
         descripcio,
       };
 
-      // Intenta guardar los datos del restaurante
+      // Guardar datos del restaurante
       await setDoc(newRestaurantRef, restaurantData);
 
-      // Guardar datos de los trabajadores
+      // Guardar datos de los treballadors
       for (const user of selectedUsers) {
         const userSnap = await getDoc(doc(db, "users", user.userId));
         if (userSnap.exists()) {
@@ -227,17 +204,21 @@ const RestaurantsForm = () => {
             "alumnes"
           );
 
-          await setDoc(doc(alumnesRef), {
+          const alumneData = {
             nom: `${userData.nom} ${userData.cognom}`,
             image: userData.imageUrl,
             correu: userData.email,
-            instagram: user.userInstagram,
-            linkedin: user.linkedin,
-            mobil: user.mobil,
             responsabilitat: user.responsabilitat,
             propietari: user.propietari,
             anydeinici: user.anydeinici,
-          });
+          };
+
+          // Incluir campos opcionales solo si existen y no son vacíos
+          if (userData.instagram) alumneData.instagram = userData.instagram;
+          if (userData.linkedin) alumneData.linkedin = userData.linkedin;
+          if (userData.mobile) alumneData.mobil = userData.mobile;
+
+          await setDoc(doc(alumnesRef), alumneData);
         }
       }
 
@@ -376,9 +357,8 @@ const RestaurantsForm = () => {
         <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Fotos</FormLabel>
           {foto.map((url, index) => (
-            <Box key={index}>
+            <Box key={index} position="relative">
               <Input
-                key={index}
                 type="text"
                 value={url}
                 onChange={(e) => handleFotosChange(index, e.target.value)}
@@ -408,9 +388,7 @@ const RestaurantsForm = () => {
 
           <FormHelperText
             mt={1}
-            color={
-              touchedFields.foto && foto.some((f) => !f.url) ? "red" : "gray"
-            }
+            color={touchedFields.foto && foto.every((f) => !f) ? "red" : "gray"}
           >
             Introdueix les URLs de les fotos del restaurant.
           </FormHelperText>
@@ -494,39 +472,7 @@ const RestaurantsForm = () => {
                   }
                 />
               </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Instagram</FormLabel>
-                <Input
-                  placeholder="Instagram"
-                  type="text"
-                  value={user.userInstagram || ""}
-                  onChange={(e) =>
-                    handleUserChange(index, "userInstagram", e.target.value)
-                  }
-                />
-              </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Linkedin</FormLabel>
-                <Input
-                  placeholder="Linkedin"
-                  type="text"
-                  value={user.linkedin || ""}
-                  onChange={(e) =>
-                    handleUserChange(index, "linkedin", e.target.value)
-                  }
-                />
-              </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Móvil</FormLabel>
-                <Input
-                  placeholder="Móvil"
-                  type="text"
-                  value={user.mobil || ""}
-                  onChange={(e) =>
-                    handleUserChange(index, "mobil", e.target.value)
-                  }
-                />
-              </FormControl>
+
               <FormControl mt={5}>
                 <FormLabel>¿És propietari?</FormLabel>
                 <Checkbox

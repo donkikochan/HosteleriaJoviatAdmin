@@ -25,7 +25,7 @@ const SuccessRest = () => {
         >
           Si voleu introduir un nou restaurant, premeu el botó
         </Heading>
-        <Link to="/carrega-restaurants">
+        <Link to="/Ingressar-restaurants">
           <Button colorScheme="blackAlpha" mt={18} mb={18}>
             Començar la càrrega
           </Button>
