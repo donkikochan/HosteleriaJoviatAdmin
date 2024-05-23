@@ -16,6 +16,7 @@ import {
   signInWithEmailAndPassword,
   sendPasswordResetEmail,
 } from "firebase/auth";
+import { getFirestore, doc, getDoc } from "firebase/firestore";
 import { useLocation } from "wouter";
 import { ViewIcon, ViewOffIcon } from "@chakra-ui/icons";
 import { app } from "../../firebaseConfig";
@@ -42,16 +43,29 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const auth = getAuth(app);
+    const db = getFirestore(app);
     try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: "Inicio de sesión exitoso",
-        description: "Has iniciado sesión correctamente.",
-        status: "success",
-        duration: 5000,
-        isClosable: true,
-      });
-      navigate("/home");
+      const userCredential = await signInWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
+      const user = userCredential.user;
+
+      // Verificar el rol del usuario
+      const userDoc = await getDoc(doc(db, "users", user.uid));
+      if (userDoc.exists() && userDoc.data().role === "admin") {
+        toast({
+          title: "Inicio de sesión exitoso",
+          description: "Has iniciado sesión correctamente.",
+          status: "success",
+          duration: 5000,
+          isClosable: true,
+        });
+        navigate("/home");
+      } else {
+        throw new Error("No tienes permisos de administrador");
+      }
     } catch (error) {
       toast({
         title: "Error",
