@@ -24,7 +24,7 @@ const Nav = () => {
         justify={"flex-start"}
         paddingLeft={"10vw"}
       >
-        <Link to="/">
+        <Link to="/home">
           <Image src={logo} alt="Joviat logo" width={150} />
         </Link>
       </Stack>

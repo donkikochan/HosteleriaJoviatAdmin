@@ -20,6 +20,7 @@ import {
   setDoc,
   collection,
   getDocs,
+  deleteDoc,
 } from "firebase/firestore";
 import { app } from "../../firebaseConfig";
 import { DeleteIcon } from "@chakra-ui/icons";
@@ -43,6 +44,7 @@ const EditRestaurantForm = () => {
   });
   const [allUsers, setAllUsers] = useState([]);
   const [addingNewUser, setAddingNewUser] = useState(false);
+  const [deletedUsers, setDeletedUsers] = useState([]);
 
   useEffect(() => {
     const db = getFirestore(app);
@@ -54,6 +56,8 @@ const EditRestaurantForm = () => {
         id: doc.id,
         nom: doc.data().nom,
         cognom: doc.data().cognom,
+        imageUrl: doc.data().imageUrl,
+        email: doc.data().email,
       }));
       setAllUsers(usersData);
     };
@@ -87,7 +91,7 @@ const EditRestaurantForm = () => {
           duration: 5000,
           isClosable: true,
         });
-        navigate("/");
+        navigate("/home");
       }
     };
 
@@ -127,6 +131,8 @@ const EditRestaurantForm = () => {
       updatedUsers[index] = {
         ...updatedUsers[index],
         nom: selectedUser ? `${selectedUser.nom} ${selectedUser.cognom}` : "",
+        correu: selectedUser ? selectedUser.email : "",
+        image: selectedUser ? selectedUser.imageUrl : "",
       };
     }
 
@@ -145,6 +151,10 @@ const EditRestaurantForm = () => {
   };
 
   const removeUser = (index) => {
+    const userIdToDelete = restaurant.users[index].id;
+    if (userIdToDelete) {
+      setDeletedUsers((prev) => [...prev, userIdToDelete]);
+    }
     const filteredUsers = restaurant.users.filter((_, i) => i !== index);
     setRestaurant((prev) => ({ ...prev, users: filteredUsers }));
     setAddingNewUser(false);
@@ -172,8 +182,14 @@ const EditRestaurantForm = () => {
         { merge: true }
       );
 
-      // Update the "alumnes" subcollection
+      // Delete users from the "alumnes" subcollection
       const alumnesCollectionRef = collection(restaurantDocRef, "alumnes");
+      for (const userId of deletedUsers) {
+        const userDocRef = doc(alumnesCollectionRef, userId);
+        await deleteDoc(userDocRef);
+      }
+
+      // Update the "alumnes" subcollection
       for (const user of restaurant.users) {
         const userDocRef = user.id
           ? doc(alumnesCollectionRef, user.id)
@@ -332,7 +348,17 @@ const EditRestaurantForm = () => {
         </FormControl>
 
         {restaurant.users.map((user, index) => (
-          <Box key={index} mb={5} w="100%">
+          <Box
+            key={index}
+            mb={5}
+            w="100%"
+            my={5}
+            px={10}
+            pb={10}
+            pt={5}
+            boxShadow={"2px 2px 5px 0 grey"}
+            borderRadius={15}
+          >
             <FormControl isRequired>
               <FormLabel>Usuari</FormLabel>
               {addingNewUser && user.userId === "" ? (
