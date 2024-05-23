@@ -36,7 +36,13 @@ const RestaurantsForm = () => {
   const [descripcio, setDescripcio] = useState("");
   const [users, setUsers] = useState([]);
   const [selectedUsers, setSelectedUsers] = useState([
-    { userId: "", responsabilitat: "", propietari: false, anydeinici: "" },
+    {
+      userId: "",
+      responsabilitat: "",
+      propietari: false,
+      anydeinici: "",
+      imageUrl: "",
+    },
   ]);
   const [responsabilitat, setResponsabilitat] = useState("");
   const [propietari, setPropietari] = useState(false);
@@ -431,70 +437,80 @@ const RestaurantsForm = () => {
         </FormControl>
 
         <FormControl mb={5} maxW={600}>
-          <FormLabel my={7}>Afegir treballadors</FormLabel>
-          {selectedUsers.map((user, index) => (
-            <Box key={index}>
-              <FormControl isRequired>
-                <FormLabel mt={25}>Seleccioneu un usuari</FormLabel>
-                <Select
-                  placeholder="Seleccioneu un usuari"
-                  onChange={(e) =>
-                    handleUserChange(index, "userId", e.target.value)
-                  }
-                  value={user.userId}
-                >
-                  {users.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.nom + " " + option.cognom}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Any de inici</FormLabel>
-                <Input
-                  placeholder="Any de inici"
-                  type="text"
-                  value={user.anydeinici}
-                  onChange={(e) =>
-                    handleUserChange(index, "anydeinici", e.target.value)
-                  }
-                />
-              </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Responsabilitat</FormLabel>
-                <Input
-                  placeholder="Responsabilitat"
-                  type="text"
-                  value={user.responsabilitat}
-                  onChange={(e) =>
-                    handleUserChange(index, "responsabilitat", e.target.value)
-                  }
-                />
-              </FormControl>
-
-              <FormControl mt={5}>
-                <FormLabel>¿És propietari?</FormLabel>
-                <Checkbox
-                  mb={10}
-                  isChecked={user.propietari}
-                  onChange={(e) =>
-                    handleUserChange(index, "propietari", e.target.checked)
-                  }
-                >
-                  És propietari
-                </Checkbox>
-              </FormControl>
-              <Button
-                position={"absolute"}
-                right={0}
-                colorScheme="red"
-                onClick={() => removeWorker(index)}
+          <Box>
+            <FormLabel my={7}>Afegir treballadors</FormLabel>
+            {selectedUsers.map((user, index) => (
+              <Box
+                key={index}
+                my={5}
+                px={10}
+                pb={10}
+                pt={5}
+                boxShadow={"2px 2px 5px 0 grey"}
+                borderRadius={15}
               >
-                <DeleteIcon />
-              </Button>
-            </Box>
-          ))}
+                <FormControl isRequired>
+                  <FormLabel mt={25}>Seleccioneu un usuari</FormLabel>
+                  <Select
+                    placeholder="Seleccioneu un usuari"
+                    onChange={(e) =>
+                      handleUserChange(index, "userId", e.target.value)
+                    }
+                    value={user.userId}
+                  >
+                    {users.map((option) => (
+                      <option key={option.id} value={option.id}>
+                        {option.nom + " " + option.cognom}
+                      </option>
+                    ))}
+                  </Select>
+                </FormControl>
+                <FormControl mt={5} isRequired>
+                  <FormLabel>Any de inici</FormLabel>
+                  <Input
+                    placeholder="Any de inici"
+                    type="text"
+                    value={user.anydeinici}
+                    onChange={(e) =>
+                      handleUserChange(index, "anydeinici", e.target.value)
+                    }
+                  />
+                </FormControl>
+                <FormControl mt={5} isRequired>
+                  <FormLabel>Responsabilitat</FormLabel>
+                  <Input
+                    placeholder="Responsabilitat"
+                    type="text"
+                    value={user.responsabilitat}
+                    onChange={(e) =>
+                      handleUserChange(index, "responsabilitat", e.target.value)
+                    }
+                  />
+                </FormControl>
+
+                <FormControl mt={5}>
+                  <FormLabel>¿És propietari?</FormLabel>
+                  <Checkbox
+                    mb={10}
+                    isChecked={user.propietari}
+                    onChange={(e) =>
+                      handleUserChange(index, "propietari", e.target.checked)
+                    }
+                  >
+                    És propietari
+                  </Checkbox>
+                </FormControl>
+                <Button
+                  position={"absolute"}
+                  right={5}
+                  colorScheme="red"
+                  onClick={() => removeWorker(index)}
+                >
+                  <DeleteIcon />
+                </Button>
+              </Box>
+            ))}
+          </Box>
           <Button colorScheme="blue" onClick={addNewWorker}>
             <AddIcon /> Afegir més treballadors
           </Button>

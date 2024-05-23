@@ -51,7 +51,7 @@ const LoginForm = () => {
         duration: 5000,
         isClosable: true,
       });
-      navigate("/home"); // Redirige a la página principal o la página deseada después del inicio de sesión
+      navigate("/home");
     } catch (error) {
       toast({
         title: "Error",
@@ -68,7 +68,7 @@ const LoginForm = () => {
     try {
       await sendPasswordResetEmail(auth, email);
       toast({
-        title: "Correo enviado",
+        title: "Correu enviat",
         description: "Se ha enviado un correo para restablecer tu contraseña.",
         status: "success",
         duration: 5000,
@@ -97,7 +97,7 @@ const LoginForm = () => {
           mb={5}
           textAlign={"center"}
         >
-          Iniciar Sesión
+          Iniciar sessió
         </Heading>
       </VStack>
       <VStack
@@ -108,17 +108,17 @@ const LoginForm = () => {
         mx="auto"
       >
         <FormControl isRequired>
-          <FormLabel>Correo Electrónico</FormLabel>
+          <FormLabel>Correu</FormLabel>
           <Input
             type="email"
             value={email}
             onChange={handleEmailChange}
-            placeholder="Correo Electrónico"
+            placeholder="Correu"
           />
         </FormControl>
 
         <FormControl isRequired>
-          <FormLabel>Contraseña</FormLabel>
+          <FormLabel>Contrasenya</FormLabel>
           <InputGroup>
             <Input
               type={showPassword ? "text" : "password"}
@@ -135,10 +135,10 @@ const LoginForm = () => {
         </FormControl>
 
         <Button colorScheme="blue" type="submit">
-          Iniciar Sesión
+          Iniciar Sessió
         </Button>
         <Button variant="link" onClick={handleForgotPassword}>
-          ¿Olvidaste tu contraseña?
+          Vas oblidar la teva contrasenya?
         </Button>
       </VStack>
     </Box>
