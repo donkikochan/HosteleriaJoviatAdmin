@@ -43,6 +43,7 @@ const EditRestaurantForm = () => {
     users: [],
   });
   const [allUsers, setAllUsers] = useState([]);
+  const [userImages, setUserImages] = useState({});
   const [addingNewUser, setAddingNewUser] = useState(false);
   const [deletedUsers, setDeletedUsers] = useState([]);
 
@@ -50,48 +51,88 @@ const EditRestaurantForm = () => {
     const db = getFirestore(app);
 
     const fetchAllUsers = async () => {
-      const usersCollectionRef = collection(db, "users");
-      const userSnapshots = await getDocs(usersCollectionRef);
-      const usersData = userSnapshots.docs.map((doc) => ({
-        id: doc.id,
-        nom: doc.data().nom,
-        cognom: doc.data().cognom,
-        imageUrl: doc.data().imageUrl,
-        email: doc.data().email,
-      }));
-      setAllUsers(usersData);
-    };
-
-    const fetchRestaurantData = async () => {
-      const restaurantDocRef = doc(db, "Restaurant", restaurantId);
-      const docSnap = await getDoc(restaurantDocRef);
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-
-        // Fetch the "alumnes" subcollection
-        const alumnesCollectionRef = collection(restaurantDocRef, "alumnes");
-        const alumnesSnapshot = await getDocs(alumnesCollectionRef);
-        const alumnesData = alumnesSnapshot.docs.map((doc) => ({
+      try {
+        const usersCollectionRef = collection(db, "users");
+        const userSnapshots = await getDocs(usersCollectionRef);
+        const usersData = userSnapshots.docs.map((doc) => ({
           id: doc.id,
-          ...doc.data(),
+          nom: doc.data().nom,
+          cognom: doc.data().cognom,
+          imageUrl: doc.data().imageUrl,
+          email: doc.data().email,
         }));
-
-        setRestaurant({
-          ...data,
-          users: alumnesData,
-        });
-
-        console.log("Alumnes data: ", alumnesData);
-        await fetchAllUsers();
-      } else {
+        setAllUsers(usersData);
+      } catch (error) {
+        console.error("Error fetching users:", error);
         toast({
           title: "Error",
-          description: "No se encontró el restaurante.",
+          description: "No se pudieron obtener los usuarios.",
           status: "error",
           duration: 5000,
           isClosable: true,
         });
-        navigate("/home");
+      }
+    };
+
+    const fetchRestaurantData = async () => {
+      try {
+        const restaurantDocRef = doc(db, "Restaurant", restaurantId);
+        const docSnap = await getDoc(restaurantDocRef);
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+
+          // Fetch the "alumnes" subcollection
+          const alumnesCollectionRef = collection(restaurantDocRef, "alumnes");
+          const alumnesSnapshot = await getDocs(alumnesCollectionRef);
+          const alumnesData = alumnesSnapshot.docs.map((doc) => ({
+            id: doc.id,
+            ...doc.data(),
+          }));
+
+          setRestaurant({
+            ...data,
+            users: alumnesData,
+          });
+
+          console.log("Alumnes data: ", alumnesData);
+          await fetchAllUsers();
+          // Fetch user images
+          const userIds = alumnesData.map((alumne) => alumne.userId);
+          const imagePromises = userIds.map(async (userId) => {
+            if (userId) {
+              const userDocRef = doc(db, "users", userId);
+              const userDoc = await getDoc(userDocRef);
+              if (userDoc.exists()) {
+                return { [userId]: userDoc.data().imageUrl };
+              }
+            }
+            return { [userId]: null };
+          });
+          const images = await Promise.all(imagePromises);
+          const imagesMap = images.reduce(
+            (acc, img) => ({ ...acc, ...img }),
+            {}
+          );
+          setUserImages(imagesMap);
+        } else {
+          toast({
+            title: "Error",
+            description: "No se encontró el restaurante.",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          });
+          navigate("/home");
+        }
+      } catch (error) {
+        console.error("Error carregant dades del restaurant:", error);
+        toast({
+          title: "Error",
+          description: "Error en carregar les dades del restaurant.",
+          status: "error",
+          duration: 5000,
+          isClosable: true,
+        });
       }
     };
 
