@@ -48,9 +48,9 @@ const EditStudentForm = () => {
           setAcademicStatus(data.academicStatus || "");
           setBirth(data.birth || "");
           setUsername(data.username || "");
-          setLinkedin(data.linkedin || "");  
-          setInstagram(data.instagram || "");  
-          setMobile(data.mobile || "");  
+          setLinkedin(data.linkedin || "");
+          setInstagram(data.instagram || "");
+          setMobile(data.mobile || "");
         } else {
           toast({
             title: "Error",
@@ -80,7 +80,16 @@ const EditStudentForm = () => {
     try {
       await setDoc(
         studentDocRef,
-        { nom, cognom, academicStatus, birth, username, linkedin, instagram, mobile },
+        {
+          nom,
+          cognom,
+          academicStatus,
+          birth,
+          username,
+          linkedin,
+          instagram,
+          mobile,
+        },
         { merge: true }
       );
       toast({
@@ -132,9 +141,9 @@ const EditStudentForm = () => {
             onChange={(e) => setNom(e.target.value)}
             placeholder="Nom"
           />
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Cognom</FormLabel>
           <Input
             type="text"
@@ -142,9 +151,9 @@ const EditStudentForm = () => {
             onChange={(e) => setCognom(e.target.value)}
             placeholder="Cognom"
           />
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Estat acadèmic</FormLabel>
           <Select
             value={academicStatus}
@@ -154,9 +163,9 @@ const EditStudentForm = () => {
             <option value="Alumn">Alumne</option>
             <option value="Ex-alumn">Ex-alumne</option>
           </Select>
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Data de naixement</FormLabel>
           <Input
             type="date"
@@ -164,18 +173,18 @@ const EditStudentForm = () => {
             onChange={(e) => setBirth(e.target.value)}
             placeholder="Data de naixement"
           />
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} isRequired>
+        <FormControl maxW={600} isRequired>
           <FormLabel mt={5}>Nom d'usuari</FormLabel>
           <Input
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             placeholder="Nom d'usuari"
           />
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} >
+        <FormControl maxW={600}>
           <FormLabel mt={5}>LinkedIn</FormLabel>
           <Input
             type="text"
@@ -183,9 +192,9 @@ const EditStudentForm = () => {
             onChange={(e) => setLinkedin(e.target.value)}
             placeholder="LinkedIn"
           />
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} >
+        <FormControl maxW={600}>
           <FormLabel mt={5}>Instagram</FormLabel>
           <Input
             type="text"
@@ -193,9 +202,9 @@ const EditStudentForm = () => {
             onChange={(e) => setInstagram(e.target.value)}
             placeholder="Instagram"
           />
-          </FormControl>
+        </FormControl>
 
-          <FormControl  maxW={600} >
+        <FormControl maxW={600}>
           <FormLabel mt={5}>Móvil</FormLabel>
           <Input
             type="tel"
@@ -203,14 +212,13 @@ const EditStudentForm = () => {
             onChange={(e) => setMobile(e.target.value)}
             placeholder="Móvil"
           />
-          </FormControl>
+        </FormControl>
 
-          <Button mt={5} mb={20} colorScheme="blue" type="submit">
-            Guardar Canvis
-          </Button>
-        
+        <Button mt={5} mb={20} colorScheme="blue" type="submit">
+          Guardar Canvis
+        </Button>
       </VStack>
-   
+
       <AlertDialog
         isOpen={isOpen}
         leastDestructiveRef={cancelRef}
