@@ -1,0 +1,25 @@
+[debug] [2024-05-27T08:45:25.854Z] ----------------------------------------------------------------------
+[debug] [2024-05-27T08:45:25.859Z] Command:       C:\Program Files\nodejs\node.exe C:\Users\majo_\AppData\Roaming\npm\node_modules\firebase-tools\lib\bin\firebase.js init
+[debug] [2024-05-27T08:45:25.860Z] CLI Version:   13.10.1
+[debug] [2024-05-27T08:45:25.860Z] Platform:      win32
+[debug] [2024-05-27T08:45:25.860Z] Node Version:  v20.11.1
+[debug] [2024-05-27T08:45:25.861Z] Time:          Mon May 27 2024 10:45:25 GMT+0200 (hora de verano de Europa central)
+[debug] [2024-05-27T08:45:25.861Z] ----------------------------------------------------------------------
+[debug] 
+[debug] [2024-05-27T08:45:26.021Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2024-05-27T08:45:26.022Z] > authorizing via signed-in user (issamariajose@gmail.com)
+[info] 
+     ######## #### ########  ######## ########     ###     ######  ########
+     ##        ##  ##     ## ##       ##     ##  ##   ##  ##       ##
+     ######    ##  ########  ######   ########  #########  ######  ######
+     ##        ##  ##    ##  ##       ##     ## ##     ##       ## ##
+     ##       #### ##     ## ######## ########  ##     ##  ######  ########
+
+You're about to initialize a Firebase project in this directory:
+
+  C:\Users\majo_\Documents\Joviat-admin
+
+Before we get started, keep in mind:
+
+  * You are initializing within an existing Firebase project directory
+

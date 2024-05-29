@@ -60,6 +60,9 @@ const EditRestaurantForm = () => {
           cognom: doc.data().cognom,
           imageUrl: doc.data().imageUrl,
           email: doc.data().email,
+          instagram: doc.data().instagram,
+          linkedin: doc.data().linkedin,
+          mobile: doc.data().mobile,
         }));
         setAllUsers(usersData);
       } catch (error) {
@@ -174,6 +177,9 @@ const EditRestaurantForm = () => {
         nom: selectedUser ? `${selectedUser.nom} ${selectedUser.cognom}` : "",
         correu: selectedUser ? selectedUser.email : "",
         image: selectedUser ? selectedUser.imageUrl : "",
+        instagram: selectedUser ? selectedUser.instagram : "",
+        linkedin: selectedUser ? selectedUser.linkedin : "",
+        mobil: selectedUser ? selectedUser.mobile : "",
       };
     }
 
