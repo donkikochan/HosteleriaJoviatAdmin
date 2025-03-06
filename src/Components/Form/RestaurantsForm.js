@@ -1,4 +1,6 @@
-import React, { useState, useEffect } from "react";
+"use client"
+
+import { useState, useEffect } from "react"
 import {
   FormControl,
   FormLabel,
@@ -10,46 +12,50 @@ import {
   Heading,
   Select,
   Checkbox,
-} from "@chakra-ui/react";
-import { useLocation } from "wouter";
-import { AddIcon, DeleteIcon } from "@chakra-ui/icons";
+  Tabs,
+  Tab,
+  TabList,
+  TabPanels,
+  TabPanel,
+  Modal,
+  ModalOverlay,
+  ModalContent,
+  ModalHeader,
+  ModalFooter,
+  ModalBody,
+  ModalCloseButton,
+  useDisclosure,
+  Avatar,
+  Flex,
+  Stack,
+  InputGroup,
+  InputLeftElement,
+  Text,
+} from "@chakra-ui/react"
+import { useLocation } from "wouter"
+import { AddIcon, DeleteIcon, SearchIcon } from "@chakra-ui/icons"
 
-import {
-  getFirestore,
-  setDoc,
-  doc,
-  collection,
-  getDocs,
-  getDoc,
-} from "@firebase/firestore";
-import { app } from "../../firebaseConfig";
+import { getFirestore, setDoc, doc, collection, getDocs, getDoc } from "@firebase/firestore"
+import { app } from "../../firebaseConfig"
 
 const RestaurantsForm = () => {
-  const [nom, setNom] = useState("");
-  const [tel, setTel] = useState("");
-  const [web, setWeb] = useState("");
-  const [longitud, setLongitud] = useState("");
-  const [latitud, setLatitud] = useState("");
-  const [instagram, setInstagram] = useState("");
-  const [foto, setFotos] = useState([""]);
-  const [direccio, setDireccio] = useState("");
-  const [descripcio, setDescripcio] = useState("");
-  const [users, setUsers] = useState([]);
-  const [selectedUsers, setSelectedUsers] = useState([
-    {
-      userId: "",
-      responsabilitat: "",
-      propietari: false,
-      anydeinici: "",
-      imageUrl: "",
-    },
-  ]);
-  const [responsabilitat, setResponsabilitat] = useState("");
-  const [propietari, setPropietari] = useState(false);
-  const [anydeinici, setAnydeinici] = useState("");
-  const [userInstagram, setUserInstagram] = useState("");
-  const [linkedin, setLinkedin] = useState("");
-  const [mobil, setMobil] = useState("");
+  const [nom, setNom] = useState("")
+  const [tel, setTel] = useState("")
+  const [web, setWeb] = useState("")
+  const [longitud, setLongitud] = useState("")
+  const [latitud, setLatitud] = useState("")
+  const [instagram, setInstagram] = useState("")
+  const [foto, setFotos] = useState([""])
+  const [direccio, setDireccio] = useState("")
+  const [descripcio, setDescripcio] = useState("")
+  const [users, setUsers] = useState([])
+  const [selectedUsers, setSelectedUsers] = useState([])
+  const [responsabilitat, setResponsabilitat] = useState("")
+  const [propietari, setPropietari] = useState(false)
+  const [anydeinici, setAnydeinici] = useState("")
+  const [userInstagram, setUserInstagram] = useState("")
+  const [linkedin, setLinkedin] = useState("")
+  const [mobil, setMobil] = useState("")
   const [touchedFields, setTouchedFields] = useState({
     nom: false,
     tel: false,
@@ -64,124 +70,186 @@ const RestaurantsForm = () => {
     responsabilitat: false,
     propietari: false,
     anydeinici: false,
-  });
-  const [location, navigate] = useLocation();
+  })
+  const [location, navigate] = useLocation()
+  const [searchTerm, setSearchTerm] = useState("")
+  const [newUsersCount, setNewUsersCount] = useState(0)
+  const { isOpen, onOpen, onClose } = useDisclosure()
 
   useEffect(() => {
     const fetchUsers = async () => {
-      const db = getFirestore(app);
-      const querySnapshot = await getDocs(collection(db, "users"));
+      const db = getFirestore(app)
+      const querySnapshot = await getDocs(collection(db, "users"))
       const usersData = querySnapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
-      }));
+      }))
 
-      setUsers(usersData);
-    };
+      setUsers(usersData)
+    }
 
-    fetchUsers();
-  }, []);
+    fetchUsers()
+  }, [])
 
   const handleNomChange = (e) => {
-    setNom(e.target.value);
-  };
+    setNom(e.target.value)
+  }
   const handleTelChange = (e) => {
-    setTel(e.target.value);
-  };
+    setTel(e.target.value)
+  }
   const handleWebChange = (e) => {
-    setWeb(e.target.value);
-  };
+    setWeb(e.target.value)
+  }
   const handleLongitudChange = (e) => {
-    setLongitud(e.target.value);
-  };
+    setLongitud(e.target.value)
+  }
   const handleLatitudChange = (e) => {
-    setLatitud(e.target.value);
-  };
+    setLatitud(e.target.value)
+  }
   const handleInstagramChange = (e) => {
-    setInstagram(e.target.value);
-  };
+    setInstagram(e.target.value)
+  }
   const handleFotosChange = (index, value) => {
-    const newFotos = [...foto];
-    newFotos[index] = value;
-    setFotos(newFotos);
-  };
+    const newFotos = [...foto]
+    newFotos[index] = value
+    setFotos(newFotos)
+  }
 
   const addFotoInput = () => {
-    setFotos([...foto, ""]);
-  };
+    setFotos([...foto, ""])
+  }
 
   const removeFotoInput = (index) => {
-    setFotos((prevFotos) => prevFotos.filter((_, i) => i !== index));
-  };
+    setFotos((prevFotos) => prevFotos.filter((_, i) => i !== index))
+  }
+
+  const sortUsersByLastName = (users) => {
+    return users.sort((a, b) => {
+      const lastNameA = a.cognom.toLowerCase()
+      const lastNameB = b.cognom.toLowerCase()
+      if (lastNameA < lastNameB) return -1
+      if (lastNameA > lastNameB) return 1
+      return a.nom.toLowerCase().localeCompare(b.nom.toLowerCase())
+    })
+  }
+
+  const sortUsers = (users) => {
+    return users.sort((a, b) => {
+      // Obtener el primer apellido (primera palabra después del nombre)
+      const fullNameA = a.nom.split(" ")
+      const fullNameB = b.nom.split(" ")
+
+      // Asumimos que el primer apellido es la segunda palabra (índice 1)
+      // Si solo hay una palabra, usamos esa
+      const firstSurnameA = fullNameA.length > 1 ? fullNameA[1].toLowerCase() : fullNameA[0].toLowerCase()
+      const firstSurnameB = fullNameB.length > 1 ? fullNameB[1].toLowerCase() : fullNameB[0].toLowerCase()
+
+      // Comparar por la primera letra del primer apellido
+      if (firstSurnameA[0] !== firstSurnameB[0]) {
+        return firstSurnameA[0].localeCompare(firstSurnameB[0])
+      }
+
+      // Si las primeras letras son iguales, comparar el apellido completo
+      return firstSurnameA.localeCompare(firstSurnameB)
+    })
+  }
+
+  const groupedUsers = sortUsers(selectedUsers)
 
   const addNewWorker = () => {
-    setSelectedUsers((prevUsers) => [
-      ...prevUsers,
-      {
-        userId: "",
-        responsabilitat: "",
-        propietari: false,
-        anydeinici: "",
-      },
-    ]);
-  };
+    onOpen()
+  }
+
+  const selectUser = (userId) => {
+    // Comprovar si l'usuari ja existeix al restaurant
+    const userExists = selectedUsers.some((user) => user.userId === userId)
+
+    if (userExists) {
+      alert("Aquest usuari ja està afegit al restaurant.")
+      onClose()
+      return
+    }
+
+    const selectedUser = users.find((user) => user.id === userId)
+    setSelectedUsers((prev) =>
+      sortUsers([
+        ...prev,
+        {
+          userId: userId,
+          responsabilitat: "",
+          propietari: false,
+          anydeinici: "",
+          nom: selectedUser ? `${selectedUser.nom} ${selectedUser.cognom}` : "",
+          correu: selectedUser ? selectedUser.email : "",
+          image: selectedUser ? selectedUser.imageUrl : "",
+          instagram: selectedUser ? selectedUser.instagram : "",
+          linkedin: selectedUser ? selectedUser.linkedin : "",
+          mobil: selectedUser ? selectedUser.mobile : "",
+        },
+      ]),
+    )
+    setNewUsersCount((prevCount) => prevCount + 1)
+    onClose()
+  }
+
+  const filteredUsers = sortUsersByLastName(
+    users.filter(
+      (user) =>
+        `${user.nom} ${user.cognom}`.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()),
+    ),
+  )
 
   const removeWorker = (index) => {
-    setSelectedUsers((prevUsers) => prevUsers.filter((_, i) => i !== index));
-  };
+    setSelectedUsers((prevUsers) => prevUsers.filter((_, i) => i !== index))
+  }
 
   const handleDireccioChange = (e) => {
-    setDireccio(e.target.value);
-  };
+    setDireccio(e.target.value)
+  }
   const handleDescripcioChange = (e) => {
-    setDescripcio(e.target.value);
-  };
+    setDescripcio(e.target.value)
+  }
   const handlePropietariChange = (e) => {
-    setPropietari(e.target.checked);
-  };
+    setPropietari(e.target.checked)
+  }
   const handleUserChange = (index, field, value) => {
-    setSelectedUsers((prev) =>
-      prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
-    );
-  };
+    setSelectedUsers((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)))
+  }
 
   const handleBlur = (field) => {
     setTouchedFields((prevTouchedFields) => ({
       ...prevTouchedFields,
       [field]: true,
-    }));
-  };
+    }))
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
 
     // Convertir y validar longitud y latitud
-    const numLongitud = parseFloat(longitud);
-    const numLatitud = parseFloat(latitud);
+    const numLongitud = Number.parseFloat(longitud)
+    const numLatitud = Number.parseFloat(latitud)
     if (isNaN(numLongitud) || isNaN(numLatitud)) {
-      alert("La longitud y la latitud deben ser números válidos.");
-      return;
+      alert("La longitud y la latitud deben ser números válidos.")
+      return
     }
 
     // Verificación de campos requeridos
-    const requiredFields = [nom, tel, web, instagram, direccio, descripcio];
+    const requiredFields = [nom, tel, web, instagram, direccio, descripcio]
     if (requiredFields.some((field) => !field) || foto.every((f) => !f)) {
-      alert("Por favor, completa todos los campos obligatorios.");
-      return;
+      alert("Por favor, completa todos los campos obligatorios.")
+      return
     }
 
-    if (
-      selectedUsers.some(
-        (user) => !user.userId || !user.anydeinici || !user.responsabilitat
-      )
-    ) {
-      alert("Por favor, completa todos los detalles de los treballadors.");
-      return;
+    if (selectedUsers.some((user) => !user.userId || !user.anydeinici || !user.responsabilitat)) {
+      alert("Por favor, completa todos los detalles de los treballadors.")
+      return
     }
 
     try {
-      const db = getFirestore(app);
-      const newRestaurantRef = doc(collection(db, "Restaurant"));
+      const db = getFirestore(app)
+      const newRestaurantRef = doc(collection(db, "Restaurant"))
       const restaurantData = {
         nom,
         tel,
@@ -192,23 +260,18 @@ const RestaurantsForm = () => {
         foto,
         direccio,
         descripcio,
-      };
+      }
 
       // Guardar datos del restaurante
-      await setDoc(newRestaurantRef, restaurantData);
+      await setDoc(newRestaurantRef, restaurantData)
 
       // Guardar datos de los treballadors
       for (const user of selectedUsers) {
-        const userSnap = await getDoc(doc(db, "users", user.userId));
+        const userSnap = await getDoc(doc(db, "users", user.userId))
         if (userSnap.exists()) {
-          const userData = userSnap.data();
+          const userData = userSnap.data()
 
-          const alumnesRef = collection(
-            db,
-            "Restaurant",
-            newRestaurantRef.id,
-            "alumnes"
-          );
+          const alumnesRef = collection(db, "Restaurant", newRestaurantRef.id, "alumnes")
 
           const alumneData = {
             nom: `${userData.nom} ${userData.cognom}`,
@@ -217,24 +280,24 @@ const RestaurantsForm = () => {
             responsabilitat: user.responsabilitat,
             propietari: user.propietari,
             anydeinici: user.anydeinici,
-          };
+          }
 
           // Incluir campos opcionales solo si existen y no son vacíos
-          if (userData.instagram) alumneData.instagram = userData.instagram;
-          if (userData.linkedin) alumneData.linkedin = userData.linkedin;
-          if (userData.mobile) alumneData.mobil = userData.mobile;
+          if (userData.instagram) alumneData.instagram = userData.instagram
+          if (userData.linkedin) alumneData.linkedin = userData.linkedin
+          if (userData.mobile) alumneData.mobil = userData.mobile
 
-          await setDoc(doc(alumnesRef), alumneData);
+          await setDoc(doc(alumnesRef), alumneData)
         }
       }
 
-      console.log("Restaurante creado con éxito.");
-      navigate("/success-restaurant");
+      console.log("Restaurante creado con éxito.")
+      navigate("/success-restaurant")
     } catch (error) {
-      console.error("Error al crear el restaurante:", error);
-      alert("Error al crear el restaurante: " + error.message);
+      console.error("Error al crear el restaurante:", error)
+      alert("Error al crear el restaurante: " + error.message)
     }
-  };
+  }
 
   return (
     <Box>
@@ -262,10 +325,7 @@ const RestaurantsForm = () => {
             placeholder="Nom del restaurant"
             isInvalid={touchedFields.nom && !nom}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.nom && !nom ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.nom && !nom ? "red" : "gray"}>
             Introdueix el nom del restaurant
           </FormHelperText>
         </FormControl>
@@ -280,10 +340,7 @@ const RestaurantsForm = () => {
             placeholder="Telèfon"
             isInvalid={touchedFields.tel && !tel}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.tel && !tel ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.tel && !tel ? "red" : "gray"}>
             Introdueix el telèfon.
           </FormHelperText>
         </FormControl>
@@ -298,10 +355,7 @@ const RestaurantsForm = () => {
             placeholder="URL del lloc web"
             isInvalid={touchedFields.web && !web}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.web && !web ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.web && !web ? "red" : "gray"}>
             Introdueix la url del lloc web.
           </FormHelperText>
         </FormControl>
@@ -316,10 +370,7 @@ const RestaurantsForm = () => {
             placeholder="Longitud geográfica"
             isInvalid={touchedFields.longitud && !longitud}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.longitud && !longitud ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.longitud && !longitud ? "red" : "gray"}>
             Introdueix la longitud geográfica.
           </FormHelperText>
         </FormControl>
@@ -334,10 +385,7 @@ const RestaurantsForm = () => {
             placeholder="Latitud geográfica"
             isInvalid={touchedFields.latitud && !latitud}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.latitud && !latitud ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.latitud && !latitud ? "red" : "gray"}>
             Introdueix la latitud geográfica.
           </FormHelperText>
         </FormControl>
@@ -352,10 +400,7 @@ const RestaurantsForm = () => {
             placeholder="Instagram"
             isInvalid={touchedFields.instagram && !instagram}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.instagram && !instagram ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.instagram && !instagram ? "red" : "gray"}>
             Introdueix l'instagram del restaurant.
           </FormHelperText>
         </FormControl>
@@ -373,29 +418,16 @@ const RestaurantsForm = () => {
                 isInvalid={touchedFields.foto && !url}
               />
 
-              <Button
-                position={"absolute"}
-                right={0}
-                colorScheme="red"
-                onClick={() => removeFotoInput(index)}
-              >
+              <Button position={"absolute"} right={0} colorScheme="red" onClick={() => removeFotoInput(index)}>
                 <DeleteIcon />
               </Button>
             </Box>
           ))}
-          <Button
-            onClick={() => addFotoInput()}
-            colorScheme="blue"
-            size="sm"
-            m={2}
-          >
+          <Button onClick={() => addFotoInput()} colorScheme="blue" size="sm" m={2}>
             <AddIcon /> Afegir una altra foto
           </Button>
 
-          <FormHelperText
-            mt={1}
-            color={touchedFields.foto && foto.every((f) => !f) ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.foto && foto.every((f) => !f) ? "red" : "gray"}>
             Introdueix les URLs de les fotos del restaurant.
           </FormHelperText>
         </FormControl>
@@ -410,10 +442,7 @@ const RestaurantsForm = () => {
             placeholder="Direcció"
             isInvalid={touchedFields.direccio && !direccio}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.direccio && !direccio ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.direccio && !direccio ? "red" : "gray"}>
             Introdueix la direcció del restaurant.
           </FormHelperText>
         </FormControl>
@@ -428,87 +457,107 @@ const RestaurantsForm = () => {
             placeholder="Descripció"
             isInvalid={touchedFields.descripcio && !descripcio}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.descripcio && !descripcio ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.descripcio && !descripcio ? "red" : "gray"}>
             Introdueix la descripció del restaurant.
           </FormHelperText>
         </FormControl>
 
         <FormControl mb={5} maxW={600}>
           <Box>
-            <FormLabel my={7}>Afegir treballadors</FormLabel>
-            {selectedUsers.map((user, index) => (
-            <Box
-              key={index}
-              my={5}
-              px={10}
-              pb={10}
-              pt={5}
-              boxShadow={"2px 2px 5px 0 grey"}
-              borderRadius={15}
-            >
-              <FormControl isRequired>
-                <FormLabel mt={25}>Seleccioneu un usuari</FormLabel>
-                <Select
-                  placeholder="Seleccioneu un usuari"
-                  onChange={(e) => handleUserChange(index, "userId", e.target.value)}
-                  value={user.userId}
-                >
-                  {users.map((option) => (
-                    <option key={option.id} value={option.id}>
-                      {option.nom + " " + option.cognom}
-                    </option>
-                  ))}
-                </Select>
-              </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Any de inici</FormLabel>
-                <Input
-                  placeholder="Any de inici"
-                  type="text"
-                  value={user.anydeinici}
-                  onChange={(e) => handleUserChange(index, "anydeinici", e.target.value)}
-                />
-              </FormControl>
-              <FormControl mt={5} isRequired>
-                <FormLabel>Responsabilitat</FormLabel>
-                <Select
-                  placeholder="Seleccionar Responsabilitat"
-                  value={user.responsabilitat}
-                  onChange={(e) => handleUserChange(index, "responsabilitat", e.target.value)}
-                >
-                  <option value="Cuiner">Cuiner</option>
-                  <option value="Cambrer">Cambrer</option>
-                  <option value="Gerent">Gerent</option>
-                  <option value="Neteja">Neteja</option>
-                  <option value="Altres">Altres</option>
-                </Select>
-              </FormControl>
-              <FormControl mt={5}>
-                <FormLabel>¿És propietari?</FormLabel>
-                <Checkbox
-                  mb={10}
-                  isChecked={user.propietari}
-                  onChange={(e) => handleUserChange(index, "propietari", e.target.checked)}
-                >
-                  És propietari
-                </Checkbox>
-              </FormControl>
-              <Button
-                position={"absolute"}
-                right={5}
-                colorScheme="red"
-                onClick={() => removeWorker(index)}
-              >
-                <DeleteIcon />
-              </Button>
-            </Box>
-          ))}
+            <FormLabel my={7}>Treballadors</FormLabel>
 
+            {selectedUsers.length > 0 ? (
+              <Tabs width="100%" p={4}>
+                <TabList mb={6} spacing={4} flexWrap="wrap">
+                  {groupedUsers.map((user) => (
+                    <Tab key={user.userId}>
+                      {user.nom
+                        ? (() => {
+                            const nameParts = user.nom.split(" ")
+                            // Si hay al menos nombre y un apellido
+                            if (nameParts.length > 1) {
+                              const firstName = nameParts[0]
+                              const firstSurname = nameParts[1]
+                              return `${firstSurname}, ${firstName}`
+                            }
+                            return user.nom
+                          })()
+                        : "Usuari"}
+                    </Tab>
+                  ))}
+                </TabList>
+                <TabPanels>
+                  {groupedUsers.map((user, index) => (
+                    <TabPanel key={user.userId}>
+                      <Text fontSize="md" fontWeight="bold" color="blue.500" mb={4}>
+                        Usuaris nous afegits: {newUsersCount}
+                      </Text>
+                      <Box mb={6} w="100%" my={4} px={8} py={4} boxShadow={"3px 3px 8px 0 grey"} borderRadius={20}>
+                        <FormControl mt={8} isRequired>
+                          <FormLabel>Usuari</FormLabel>
+                          <Text fontSize="lg">
+                            {user.nom
+                              ? (() => {
+                                  const nameParts = user.nom.split(" ")
+                                  // Si hay al menos nombre y un apellido
+                                  if (nameParts.length > 1) {
+                                    const firstName = nameParts[0]
+                                    const firstSurname = nameParts[1]
+                                    return `${firstSurname}, ${firstName}`
+                                  }
+                                  return user.nom
+                                })()
+                              : ""}
+                          </Text>
+                        </FormControl>
+                        <FormControl mt={8} isRequired>
+                          <FormLabel>Any de inici</FormLabel>
+                          <Input
+                            placeholder="Any de inici"
+                            type="text"
+                            value={user.anydeinici || ""}
+                            onChange={(e) => handleUserChange(index, "anydeinici", e.target.value)}
+                            size="lg"
+                          />
+                        </FormControl>
+                        <FormControl mt={8} isRequired>
+                          <FormLabel>Responsabilitat</FormLabel>
+                          <Select
+                            placeholder="Seleccionar Responsabilitat"
+                            value={user.responsabilitat || ""}
+                            onChange={(e) => handleUserChange(index, "responsabilitat", e.target.value)}
+                            size="lg"
+                          >
+                            <option value="Cuiner">Cuiner</option>
+                            <option value="Cambrer">Cambrer</option>
+                            <option value="Gerent">Gerent</option>
+                            <option value="Neteja">Neteja</option>
+                            <option value="Altres">Altres</option>
+                          </Select>
+                        </FormControl>
+                        <FormControl mt={5}>
+                          <FormLabel>¿És propietari?</FormLabel>
+                          <Checkbox
+                            mb={10}
+                            isChecked={user.propietari || false}
+                            onChange={(e) => handleUserChange(index, "propietari", e.target.checked)}
+                          >
+                            És propietari
+                          </Checkbox>
+                        </FormControl>
+                        <Button colorScheme="red" onClick={() => removeWorker(index)} mt={5}>
+                          <DeleteIcon />
+                        </Button>
+                      </Box>
+                    </TabPanel>
+                  ))}
+                </TabPanels>
+              </Tabs>
+            ) : (
+              <Text>No hi ha treballadors afegits. Feu clic al botó per afegir-ne.</Text>
+            )}
           </Box>
-          <Button colorScheme="blue" onClick={addNewWorker}>
+          <Button colorScheme="blue" onClick={addNewWorker} mt={5}>
             <AddIcon /> Afegir més treballadors
           </Button>
         </FormControl>
@@ -517,8 +566,53 @@ const RestaurantsForm = () => {
           Carregar dades
         </Button>
       </VStack>
+      <Modal isOpen={isOpen} onClose={onClose} size="xl">
+        <ModalOverlay />
+        <ModalContent>
+          <ModalHeader>Seleccionar Treballador</ModalHeader>
+          <ModalCloseButton />
+          <ModalBody>
+            <InputGroup mb={4}>
+              <InputLeftElement pointerEvents="none">
+                <SearchIcon color="gray.300" />
+              </InputLeftElement>
+              <Input
+                placeholder="Cercar treballador..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </InputGroup>
+            <Stack spacing={4} maxHeight="60vh" overflowY="auto">
+              {filteredUsers.map((user) => (
+                <Flex
+                  key={user.id}
+                  p={3}
+                  borderRadius="md"
+                  alignItems="center"
+                  _hover={{ bg: "gray.100", cursor: "pointer" }}
+                  onClick={() => selectUser(user.id)}
+                >
+                  <Avatar src={user.imageUrl} name={`${user.nom} ${user.cognom}`} mr={3} />
+                  <Box>
+                    <Text fontWeight="bold">{`${user.cognom}, ${user.nom}`}</Text>
+                    <Text fontSize="sm" color="gray.600">
+                      {user.email}
+                    </Text>
+                  </Box>
+                </Flex>
+              ))}
+            </Stack>
+          </ModalBody>
+          <ModalFooter>
+            <Button colorScheme="blue" mr={3} onClick={onClose}>
+              Tancar
+            </Button>
+          </ModalFooter>
+        </ModalContent>
+      </Modal>
     </Box>
-  );
-};
+  )
+}
 
-export default RestaurantsForm;
+export default RestaurantsForm
+
