@@ -1,5 +1,3 @@
-"use client"
-
 import { useState, useEffect } from "react"
 import {
   FormControl,
@@ -32,7 +30,7 @@ import {
   InputLeftElement,
   Text,
 } from "@chakra-ui/react"
-import { useLocation } from "wouter"
+import { useLocation, Link } from "wouter"
 import { AddIcon, DeleteIcon, SearchIcon } from "@chakra-ui/icons"
 
 import { getFirestore, setDoc, doc, collection, getDocs, getDoc } from "@firebase/firestore"
@@ -301,6 +299,13 @@ const RestaurantsForm = () => {
 
   return (
     <Box>
+      <Box position="fixed" top="80px" left="20px" zIndex="1000">
+        <Link to="/home">
+          <Button colorScheme="gray">
+            Tornar a l'inici
+          </Button>
+        </Link>
+      </Box>
       <VStack bg={"white"} width={"100%"} pt={150}>
         <Heading
           as="h1"
@@ -325,6 +330,7 @@ const RestaurantsForm = () => {
             placeholder="Nom del restaurant"
             isInvalid={touchedFields.nom && !nom}
           />
+          
           <FormHelperText mt={1} color={touchedFields.nom && !nom ? "red" : "gray"}>
             Introdueix el nom del restaurant
           </FormHelperText>

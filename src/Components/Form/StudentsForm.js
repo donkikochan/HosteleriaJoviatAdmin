@@ -9,8 +9,9 @@ import {
   Select,
   Box,
   Heading,
+  Flex,
 } from "@chakra-ui/react";
-import { useLocation } from "wouter";
+import { useLocation, Link } from "wouter";
 
 import {
   getFirestore,
@@ -132,18 +133,24 @@ const StudentsForm = () => {
 
   return (
     <Box>
+      <Box position="fixed" top="80px" left="20px" zIndex="1000">
+        <Link to="/home">
+          <Button colorScheme="gray">
+            Tornar a l'inici
+          </Button>
+        </Link>
+      </Box>
       <VStack bg={"white"} width={"100%"} pt={150}>
-        <Heading
-          as="h1"
-          fontFamily="'Hanken Grotesk', Arial, sans-serif"
-          size="xl"
-          w={{ base: "200", md: "600" }}
-          maxW={600}
-          mb={5}
-          textAlign={"center"}
-        >
-          ¡Ja podeu començar a carregar les dades dels alumnes!
-        </Heading>
+        <Box width="100%" maxW={800} px={4}>
+          <Heading
+            as="h1"
+            fontFamily="'Hanken Grotesk', Arial, sans-serif"
+            size="xl"
+            textAlign={"center"}
+          >
+            ¡Ja podeu començar a carregar les dades dels alumnes!
+          </Heading>
+        </Box>
       </VStack>
       <VStack as="form" onSubmit={handleSubmit}>
         <FormControl maxW={600} isRequired>
