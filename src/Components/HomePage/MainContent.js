@@ -60,6 +60,11 @@ const MainContent = () => {
               Veure restaurants
             </Button>
           </Link>
+          <Link to="/alta-usuaris">
+            <Button colorScheme="blue" mt={18} mb={18}>
+              Usuaris Alta
+            </Button>
+          </Link>
         </HStack>
         <LogoutBtn />
       </VStack>

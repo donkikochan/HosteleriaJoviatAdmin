@@ -15,6 +15,7 @@ import EditRestaurantForm from "./Components/Form/EditRestaurantForm";
 import LoginForm from "./Components/Form/Login";
 import { AuthProvider } from "./Components/AuthContext";
 import PrivateRoute from "./Components/PrivateRoute";
+import AltaUsuaris from "./Components/HomePage/AltaUsuaris";
 
 function App() {
   return (
@@ -42,6 +43,7 @@ function App() {
           path="/edit-restaurant/:id"
           component={EditRestaurantForm}
         />
+        <PrivateRoute path="/alta-usuaris" component={AltaUsuaris} />
       </AuthProvider>
     </ChakraProvider>
   );

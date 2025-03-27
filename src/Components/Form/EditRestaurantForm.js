@@ -1,7 +1,5 @@
-"use client"
-
 import { useState, useEffect } from "react"
-import { useRoute, useLocation } from "wouter"
+import { useRoute, useLocation, Link } from "wouter"
 import {
   Box,
   FormControl,
@@ -157,24 +155,33 @@ const EditRestaurantForm = () => {
 
   const sortUsers = (users) => {
     return users.sort((a, b) => {
-      // Obtener el primer apellido (primera palabra después del nombre)
-      const fullNameA = a.nom.split(" ")
-      const fullNameB = b.nom.split(" ")
+      // Handle cases where nom might be undefined
+      const nameA = a.nom || '';
+      const nameB = b.nom || '';
 
-      // Asumimos que el primer apellido es la segunda palabra (índice 1)
-      // Si solo hay una palabra, usamos esa
-      const firstSurnameA = fullNameA.length > 1 ? fullNameA[1].toLowerCase() : fullNameA[0].toLowerCase()
-      const firstSurnameB = fullNameB.length > 1 ? fullNameB[1].toLowerCase() : fullNameB[0].toLowerCase()
+      // Split names into parts
+      const fullNameA = nameA.split(" ");
+      const fullNameB = nameB.split(" ");
 
-      // Comparar por la primera letra del primer apellido
-      if (firstSurnameA[0] !== firstSurnameB[0]) {
-        return firstSurnameA[0].localeCompare(firstSurnameB[0])
+      // Get surnames with fallbacks
+      const firstSurnameA = fullNameA.length > 1 ? 
+        (fullNameA[1] || '').toLowerCase() : 
+        (fullNameA[0] || '').toLowerCase();
+      const firstSurnameB = fullNameB.length > 1 ? 
+        (fullNameB[1] || '').toLowerCase() : 
+        (fullNameB[0] || '').toLowerCase();
+
+      // Safe comparison with empty string fallback
+      const firstLetterA = firstSurnameA[0] || '';
+      const firstLetterB = firstSurnameB[0] || '';
+
+      if (firstLetterA !== firstLetterB) {
+        return (firstLetterA).localeCompare(firstLetterB);
       }
 
-      // Si las primeras letras son iguales, comparar el apellido completo
-      return firstSurnameA.localeCompare(firstSurnameB)
-    })
-  }
+      return firstSurnameA.localeCompare(firstSurnameB || '');
+    });
+  };
 
   const groupedUsers = sortUsers(restaurant.users)
 
@@ -237,18 +244,30 @@ const EditRestaurantForm = () => {
     onOpen()
   }
 
-  const removeUser = (userIndex) => {
-    const userToDelete = restaurant.users[userIndex]
+    // ... existing code ...
 
-    if (userToDelete.id) {
-      setDeletedUsers((prev) => [...prev, userToDelete.id])
+    const removeUser = (userIndex) => {
+      if (window.confirm('¿Estás seguro de que quieres eliminar este trabajador?')) {
+        const userToDelete = restaurant.users[userIndex]
+  
+        if (userToDelete.id) {
+          setDeletedUsers((prev) => [...prev, userToDelete.id])
+        }
+  
+        setRestaurant((prev) => ({
+          ...prev,
+          users: prev.users.filter((_, i) => i !== userIndex),
+        }))
+  
+        toast({
+          title: "Trabajador eliminado",
+          description: "El trabajador ha sido eliminado correctamente.",
+          status: "info",
+          duration: 3000,
+          isClosable: true,
+        })
+      }
     }
-
-    setRestaurant((prev) => ({
-      ...prev,
-      users: prev.users.filter((_, i) => i !== userIndex),
-    }))
-  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -350,13 +369,17 @@ const EditRestaurantForm = () => {
 
   const sortUsersByLastName = (users) => {
     return users.sort((a, b) => {
-      const lastNameA = a.cognom.toLowerCase()
-      const lastNameB = b.cognom.toLowerCase()
-      if (lastNameA < lastNameB) return -1
-      if (lastNameA > lastNameB) return 1
-      return a.nom.toLowerCase().localeCompare(b.nom.toLowerCase())
-    })
-  }
+      const lastNameA = (a?.cognom || '').toLowerCase();
+      const lastNameB = (b?.cognom || '').toLowerCase();
+      
+      if (lastNameA < lastNameB) return -1;
+      if (lastNameA > lastNameB) return 1;
+      
+      const firstNameA = (a?.nom || '').toLowerCase();
+      const firstNameB = (b?.nom || '').toLowerCase();
+      return firstNameA.localeCompare(firstNameB);
+    });
+  };
 
   const filteredUsers = sortUsersByLastName(
     allUsers.filter(
@@ -368,6 +391,13 @@ const EditRestaurantForm = () => {
 
   return (
     <Box>
+      <Box position="fixed" top="80px" left="20px" zIndex="1000">
+          <Link to="/home">
+            <Button colorScheme="gray">
+              Tornar a l'inici
+            </Button>
+          </Link>
+        </Box>
       <VStack bg={"white"} width={"100%"} pt={150}>
         <Heading
           as="h1"

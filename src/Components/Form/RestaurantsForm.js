@@ -123,34 +123,43 @@ const RestaurantsForm = () => {
 
   const sortUsersByLastName = (users) => {
     return users.sort((a, b) => {
-      const lastNameA = a.cognom.toLowerCase()
-      const lastNameB = b.cognom.toLowerCase()
-      if (lastNameA < lastNameB) return -1
-      if (lastNameA > lastNameB) return 1
-      return a.nom.toLowerCase().localeCompare(b.nom.toLowerCase())
-    })
-  }
+      const lastNameA = (a.cognom || '').toLowerCase();
+      const lastNameB = (b.cognom || '').toLowerCase();
+      if (lastNameA < lastNameB) return -1;
+      if (lastNameA > lastNameB) return 1;
+      return (a.nom || '').toLowerCase().localeCompare((b.nom || '').toLowerCase());
+    });
+  };
 
   const sortUsers = (users) => {
     return users.sort((a, b) => {
-      // Obtener el primer apellido (primera palabra después del nombre)
-      const fullNameA = a.nom.split(" ")
-      const fullNameB = b.nom.split(" ")
+      // Handle cases where nom might be undefined
+      const nameA = a?.nom || '';
+      const nameB = b?.nom || '';
 
-      // Asumimos que el primer apellido es la segunda palabra (índice 1)
-      // Si solo hay una palabra, usamos esa
-      const firstSurnameA = fullNameA.length > 1 ? fullNameA[1].toLowerCase() : fullNameA[0].toLowerCase()
-      const firstSurnameB = fullNameB.length > 1 ? fullNameB[1].toLowerCase() : fullNameB[0].toLowerCase()
+      // Split names into parts
+      const fullNameA = nameA.split(" ");
+      const fullNameB = nameB.split(" ");
 
-      // Comparar por la primera letra del primer apellido
-      if (firstSurnameA[0] !== firstSurnameB[0]) {
-        return firstSurnameA[0].localeCompare(firstSurnameB[0])
+      // Get surnames with fallbacks
+      const firstSurnameA = fullNameA.length > 1 ? 
+        (fullNameA[1] || '').toLowerCase() : 
+        (fullNameA[0] || '').toLowerCase();
+      const firstSurnameB = fullNameB.length > 1 ? 
+        (fullNameB[1] || '').toLowerCase() : 
+        (fullNameB[0] || '').toLowerCase();
+
+      // Safe comparison with empty string fallback
+      const firstLetterA = firstSurnameA[0] || '';
+      const firstLetterB = firstSurnameB[0] || '';
+
+      if (firstLetterA !== firstLetterB) {
+        return firstLetterA.localeCompare(firstLetterB);
       }
 
-      // Si las primeras letras son iguales, comparar el apellido completo
-      return firstSurnameA.localeCompare(firstSurnameB)
-    })
-  }
+      return firstSurnameA.localeCompare(firstSurnameB || '');
+    });
+  };
 
   const groupedUsers = sortUsers(selectedUsers)
 
