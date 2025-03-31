@@ -42,6 +42,7 @@ import { getFirestore, setDoc, doc, collection, getDocs, getDoc } from "@firebas
 import { app } from "../../firebaseConfig"
 import { searchPlaces, getPlaceDetails } from "../../utils/googlePlaceService"
 import Sidebar from "../Sidebar" // Import the Sidebar component with the correct path
+import apiKeys from "../../utils/apiKeys.js"
 
 const RestaurantsForm = () => {
   const [nom, setNom] = useState("")
@@ -126,8 +127,8 @@ const RestaurantsForm = () => {
     const mapType = "roadmap"
     const marker = `markers=color:red%7C${lat},${lng}`
 
-    // Replace this with your actual API key
-    const apiKey = "YOUR_GOOGLE_MAPS_API_KEY"
+    // Use the API key from the imported apiKeys file
+    const apiKey = apiKeys.GOOGLE_CLOUD_API_KEY
 
     const url = `https://maps.googleapis.com/maps/api/staticmap?center=${lat},${lng}&zoom=${zoom}&size=${size}&maptype=${mapType}&${marker}&key=${apiKey}`
 
@@ -196,7 +197,9 @@ const RestaurantsForm = () => {
         const lng =
           typeof place.geometry.location.lng === "function"
             ? place.geometry.location.lng()
-            : place.geometry.location.lng
+              : place.geometry.location.lng
+            
+        console.log("Datos de geometría recibidos:", place.geometry)
 
         // Convert to string for the state
         setLatitud(String(lat))
@@ -223,7 +226,7 @@ const RestaurantsForm = () => {
           .slice(0, 3)
           .map(
             (photo) =>
-              `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=YOUR_GOOGLE_MAPS_API_KEY`,
+              `https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photoreference=${photo.photo_reference}&key=${apiKeys.GOOGLE_CLOUD_API_KEY}`,
           )
         setFotos(photoUrls)
       }

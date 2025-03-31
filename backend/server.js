@@ -45,7 +45,7 @@ app.get("/api/getPlaceDetails/:placeId", async (req, res) => {
 
     // Realizar la llamada a Google Places Details API
     const response = await axios.get(
-      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_CLOUD_API_KEY}&fields=formatted_address,name,formatted_phone_number,website,place_id,types`,
+      `https://maps.googleapis.com/maps/api/place/details/json?place_id=${placeId}&key=${GOOGLE_CLOUD_API_KEY}&fields=formatted_address,name,formatted_phone_number,website,place_id,types,geometry`,
     )
     console.log("api",GOOGLE_CLOUD_API_KEY);
     console.log("✅ Respuesta de Google Places:", JSON.stringify(response.data, null, 2))
