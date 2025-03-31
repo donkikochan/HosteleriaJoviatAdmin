@@ -1,5 +1,7 @@
+"use client"
+
 import { useState, useEffect } from "react"
-import { useRoute, useLocation, Link } from "wouter"
+import { useRoute, useLocation } from "wouter"
 import {
   Box,
   FormControl,
@@ -34,6 +36,7 @@ import {
 import { doc, getFirestore, getDoc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore"
 import { app } from "../../firebaseConfig"
 import { DeleteIcon, SearchIcon } from "@chakra-ui/icons"
+import Sidebar from "../Sidebar" // Import the Sidebar component
 
 const EditRestaurantForm = () => {
   const [, params] = useRoute("/edit-restaurant/:id")
@@ -156,32 +159,30 @@ const EditRestaurantForm = () => {
   const sortUsers = (users) => {
     return users.sort((a, b) => {
       // Handle cases where nom might be undefined
-      const nameA = a.nom || '';
-      const nameB = b.nom || '';
+      const nameA = a.nom || ""
+      const nameB = b.nom || ""
 
       // Split names into parts
-      const fullNameA = nameA.split(" ");
-      const fullNameB = nameB.split(" ");
+      const fullNameA = nameA.split(" ")
+      const fullNameB = nameB.split(" ")
 
       // Get surnames with fallbacks
-      const firstSurnameA = fullNameA.length > 1 ? 
-        (fullNameA[1] || '').toLowerCase() : 
-        (fullNameA[0] || '').toLowerCase();
-      const firstSurnameB = fullNameB.length > 1 ? 
-        (fullNameB[1] || '').toLowerCase() : 
-        (fullNameB[0] || '').toLowerCase();
+      const firstSurnameA =
+        fullNameA.length > 1 ? (fullNameA[1] || "").toLowerCase() : (fullNameA[0] || "").toLowerCase()
+      const firstSurnameB =
+        fullNameB.length > 1 ? (fullNameB[1] || "").toLowerCase() : (fullNameB[0] || "").toLowerCase()
 
       // Safe comparison with empty string fallback
-      const firstLetterA = firstSurnameA[0] || '';
-      const firstLetterB = firstSurnameB[0] || '';
+      const firstLetterA = firstSurnameA[0] || ""
+      const firstLetterB = firstSurnameB[0] || ""
 
       if (firstLetterA !== firstLetterB) {
-        return (firstLetterA).localeCompare(firstLetterB);
+        return firstLetterA.localeCompare(firstLetterB)
       }
 
-      return firstSurnameA.localeCompare(firstSurnameB || '');
-    });
-  };
+      return firstSurnameA.localeCompare(firstSurnameB || "")
+    })
+  }
 
   const groupedUsers = sortUsers(restaurant.users)
 
@@ -244,30 +245,28 @@ const EditRestaurantForm = () => {
     onOpen()
   }
 
-    // ... existing code ...
+  const removeUser = (userIndex) => {
+    if (window.confirm("¿Estás seguro de que quieres eliminar este trabajador?")) {
+      const userToDelete = restaurant.users[userIndex]
 
-    const removeUser = (userIndex) => {
-      if (window.confirm('¿Estás seguro de que quieres eliminar este trabajador?')) {
-        const userToDelete = restaurant.users[userIndex]
-  
-        if (userToDelete.id) {
-          setDeletedUsers((prev) => [...prev, userToDelete.id])
-        }
-  
-        setRestaurant((prev) => ({
-          ...prev,
-          users: prev.users.filter((_, i) => i !== userIndex),
-        }))
-  
-        toast({
-          title: "Trabajador eliminado",
-          description: "El trabajador ha sido eliminado correctamente.",
-          status: "info",
-          duration: 3000,
-          isClosable: true,
-        })
+      if (userToDelete.id) {
+        setDeletedUsers((prev) => [...prev, userToDelete.id])
       }
+
+      setRestaurant((prev) => ({
+        ...prev,
+        users: prev.users.filter((_, i) => i !== userIndex),
+      }))
+
+      toast({
+        title: "Trabajador eliminado",
+        description: "El trabajador ha sido eliminado correctamente.",
+        status: "info",
+        duration: 3000,
+        isClosable: true,
+      })
     }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -369,17 +368,17 @@ const EditRestaurantForm = () => {
 
   const sortUsersByLastName = (users) => {
     return users.sort((a, b) => {
-      const lastNameA = (a?.cognom || '').toLowerCase();
-      const lastNameB = (b?.cognom || '').toLowerCase();
-      
-      if (lastNameA < lastNameB) return -1;
-      if (lastNameA > lastNameB) return 1;
-      
-      const firstNameA = (a?.nom || '').toLowerCase();
-      const firstNameB = (b?.nom || '').toLowerCase();
-      return firstNameA.localeCompare(firstNameB);
-    });
-  };
+      const lastNameA = (a?.cognom || "").toLowerCase()
+      const lastNameB = (b?.cognom || "").toLowerCase()
+
+      if (lastNameA < lastNameB) return -1
+      if (lastNameA > lastNameB) return 1
+
+      const firstNameA = (a?.nom || "").toLowerCase()
+      const firstNameB = (b?.nom || "").toLowerCase()
+      return firstNameA.localeCompare(firstNameB)
+    })
+  }
 
   const filteredUsers = sortUsersByLastName(
     allUsers.filter(
@@ -389,15 +388,10 @@ const EditRestaurantForm = () => {
     ),
   )
 
-  return (
+  // The form content that will be wrapped by the Sidebar
+  const formContent = (
     <Box>
-      <Box position="fixed" top="80px" left="20px" zIndex="1000">
-          <Link to="/home">
-            <Button colorScheme="gray">
-              Tornar a l'inici
-            </Button>
-          </Link>
-        </Box>
+      {/* Remove the "Back to home" button since the sidebar already has navigation */}
       <VStack bg={"white"} width={"100%"} pt={150}>
         <Heading
           as="h1"
@@ -636,6 +630,9 @@ const EditRestaurantForm = () => {
       </Modal>
     </Box>
   )
+
+  // Wrap the form content with the Sidebar component
+  return <Sidebar>{formContent}</Sidebar>
 }
 
 export default EditRestaurantForm

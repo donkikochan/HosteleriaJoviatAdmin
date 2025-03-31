@@ -1,8 +1,9 @@
+"use client"
+
 import { useState, useEffect } from "react"
 import {
   Box,
   Text,
-  Image,
   Button,
   Modal,
   ModalOverlay,
@@ -20,14 +21,13 @@ import {
   Card,
   CardBody,
   Badge,
-  IconButton,
-  useDisclosure
+  useDisclosure,
 } from "@chakra-ui/react"
 import { useLocation } from "wouter"
 import { db } from "../../firebaseConfig"
 import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore"
 import { ChevronRightIcon } from "@chakra-ui/icons"
-import { ChevronLeftIcon } from "@chakra-ui/icons"
+import Sidebar from "../Sidebar" // Import the Sidebar component
 
 const AltaUsuaris = () => {
   const [, setLocation] = useLocation()
@@ -162,7 +162,7 @@ const AltaUsuaris = () => {
         mobilePhone: selectedUser.mobilePhone || null,
         birth: selectedUser.birth || null,
         instagram: selectedUser.instagram || null,
-        linkedin: selectedUser.linkedin || null
+        linkedin: selectedUser.linkedin || null,
       }
 
       await setDoc(doc(db, "RechazarUser", selectedUser.id), rejectionData)
@@ -193,43 +193,32 @@ const AltaUsuaris = () => {
     }
   }
 
-  if (loading) {
-    return (
-      <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
-        <Spinner size="xl" />
-      </Box>
-    )
-  }
-
-  return (
+  // The content that will be wrapped by the Sidebar
+  const content = (
     <Box p={5} mt={20}>
-      <Box position="fixed" top="80px" left="20px" zIndex="1000">
-        <Button leftIcon={<ChevronLeftIcon />} colorScheme="gray" onClick={() => setLocation("/home")}>
-          Tornar a l'inici
-        </Button>
-      </Box>
+      {/* Remove the "Back to home" button since the sidebar already has navigation */}
       <VStack spacing={4} align="stretch">
-        {users.map((user) => (
-          <Card key={user.id} onClick={() => openUserDetails(user)} cursor="pointer" _hover={{ shadow: "md" }}>
-            <CardBody>
-              <HStack spacing={4}>
-                <Avatar
-                  size="md"
-                  src={user.imageUrl}
-                  name={user.username}
-                />
-                <Box flex={1}>
-                  <Text fontWeight="bold">{user.username || "Sin nombre"}</Text>
-                  <Text color="gray.600">{user.email || "Sin email"}</Text>
-                  {user.rejected && (
-                    <Badge colorScheme="red">Rechazado</Badge>
-                  )}
-                </Box>
-                <ChevronRightIcon />
-              </HStack>
-            </CardBody>
-          </Card>
-        ))}
+        {users.length > 0 ? (
+          users.map((user) => (
+            <Card key={user.id} onClick={() => openUserDetails(user)} cursor="pointer" _hover={{ shadow: "md" }}>
+              <CardBody>
+                <HStack spacing={4}>
+                  <Avatar size="md" src={user.imageUrl} name={user.username} />
+                  <Box flex={1}>
+                    <Text fontWeight="bold">{user.username || "Sin nombre"}</Text>
+                    <Text color="gray.600">{user.email || "Sin email"}</Text>
+                    {user.rejected && <Badge colorScheme="red">Rechazado</Badge>}
+                  </Box>
+                  <ChevronRightIcon />
+                </HStack>
+              </CardBody>
+            </Card>
+          ))
+        ) : (
+          <Box textAlign="center" py={10}>
+            <Text fontSize="lg">No hay usuarios pendientes de aprobación</Text>
+          </Box>
+        )}
       </VStack>
 
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} size="xl">
@@ -240,18 +229,25 @@ const AltaUsuaris = () => {
           <ModalBody>
             {selectedUser && (
               <VStack spacing={4} align="stretch">
-                <Avatar
-                  size="2xl"
-                  src={selectedUser.imageUrl}
-                  name={selectedUser.username}
-                  alignSelf="center"
-                />
-                <Text><strong>Nombre:</strong> {selectedUser.username}</Text>
-                <Text><strong>Apellidos:</strong> {selectedUser.apellidos}</Text>
-                <Text><strong>Email:</strong> {selectedUser.email}</Text>
-                <Text><strong>Teléfono:</strong> {selectedUser.mobilePhone || "No especificado"}</Text>
-                <Text><strong>Instagram:</strong> {selectedUser.instagram || "No especificado"}</Text>
-                <Text><strong>LinkedIn:</strong> {selectedUser.linkedin || "No especificado"}</Text>
+                <Avatar size="2xl" src={selectedUser.imageUrl} name={selectedUser.username} alignSelf="center" />
+                <Text>
+                  <strong>Nombre:</strong> {selectedUser.username}
+                </Text>
+                <Text>
+                  <strong>Apellidos:</strong> {selectedUser.apellidos}
+                </Text>
+                <Text>
+                  <strong>Email:</strong> {selectedUser.email}
+                </Text>
+                <Text>
+                  <strong>Teléfono:</strong> {selectedUser.mobilePhone || "No especificado"}
+                </Text>
+                <Text>
+                  <strong>Instagram:</strong> {selectedUser.instagram || "No especificado"}
+                </Text>
+                <Text>
+                  <strong>LinkedIn:</strong> {selectedUser.linkedin || "No especificado"}
+                </Text>
               </VStack>
             )}
           </ModalBody>
@@ -271,18 +267,12 @@ const AltaUsuaris = () => {
         <ModalContent>
           <ModalHeader>Confirmar Aceptación</ModalHeader>
           <ModalCloseButton />
-          <ModalBody>
-            ¿Está seguro que desea aceptar a este usuario?
-          </ModalBody>
+          <ModalBody>¿Está seguro que desea aceptar a este usuario?</ModalBody>
           <ModalFooter>
             <Button colorScheme="gray" mr={3} onClick={closeConfirm}>
               Cancelar
             </Button>
-            <Button
-              colorScheme="green"
-              onClick={acceptUser}
-              isLoading={processingAction}
-            >
+            <Button colorScheme="green" onClick={acceptUser} isLoading={processingAction}>
               Confirmar
             </Button>
           </ModalFooter>
@@ -305,11 +295,7 @@ const AltaUsuaris = () => {
             <Button colorScheme="gray" mr={3} onClick={closeReject}>
               Cancelar
             </Button>
-            <Button
-              colorScheme="red"
-              onClick={rejectUser}
-              isLoading={processingAction}
-            >
+            <Button colorScheme="red" onClick={rejectUser} isLoading={processingAction}>
               Rechazar
             </Button>
           </ModalFooter>
@@ -317,6 +303,20 @@ const AltaUsuaris = () => {
       </Modal>
     </Box>
   )
+
+  if (loading) {
+    return (
+      <Sidebar>
+        <Box display="flex" justifyContent="center" alignItems="center" height="100vh">
+          <Spinner size="xl" />
+        </Box>
+      </Sidebar>
+    )
+  }
+
+  // Wrap the content with the Sidebar component
+  return <Sidebar>{content}</Sidebar>
 }
 
 export default AltaUsuaris
+

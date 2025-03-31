@@ -12,6 +12,7 @@ import {
   Flex,
 } from "@chakra-ui/react";
 import { useLocation, Link } from "wouter";
+import Sidebar from "../Sidebar";
 
 import {
   getFirestore,
@@ -131,16 +132,10 @@ const StudentsForm = () => {
     }
   };
 
-  return (
+  // Contenido del formulario
+  const formContent = (
     <Box>
-      <Box position="fixed" top="80px" left="20px" zIndex="1000">
-        <Link to="/home">
-          <Button colorScheme="gray">
-            Tornar a l'inici
-          </Button>
-        </Link>
-      </Box>
-      <VStack bg={"white"} width={"100%"} pt={150}>
+      <VStack bg={"white"} width={"100%"} pt={50}>
         <Box width="100%" maxW={800} px={4}>
           <Heading
             as="h1"
@@ -320,6 +315,12 @@ const StudentsForm = () => {
         </Button>
       </VStack>
     </Box>
+  );
+
+  return (
+    <Sidebar>
+      {formContent}
+    </Sidebar>
   );
 };
 

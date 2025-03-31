@@ -37,35 +37,7 @@ const MainContent = () => {
           Benvingut a la pàgina de càrrega d'alumnes per a l'app d'Hostaleria
           JoviatApp
         </Heading>
-        <HStack>
-          <Link to="/Ingressar-alumnes">
-            <Button colorScheme="blue" mt={18}>
-              Ingressar alumnes
-            </Button>
-          </Link>
-          <Link to="/veure-alumnes">
-            <Button colorScheme="blue" mt={18}>
-              Veure alumnes
-            </Button>
-          </Link>
-        </HStack>
-        <HStack>
-          <Link to="/Ingressar-restaurants">
-            <Button colorScheme="blue" mt={18} mb={18}>
-              Ingressar restaurants
-            </Button>
-          </Link>
-          <Link to="/veure-restaurants">
-            <Button colorScheme="blue" mt={18} mb={18}>
-              Veure restaurants
-            </Button>
-          </Link>
-          <Link to="/alta-usuaris">
-            <Button colorScheme="blue" mt={18} mb={18}>
-              Usuaris Alta
-            </Button>
-          </Link>
-        </HStack>
+      
         <LogoutBtn />
       </VStack>
     </Box>

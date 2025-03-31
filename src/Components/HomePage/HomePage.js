@@ -1,13 +1,16 @@
-import React from "react";
-import MainContent from "./MainContent";
-import { Box } from "@chakra-ui/react";
+import MainContent from "./MainContent"
+import Sidebar from "../Sidebar" // Corregido: Importamos desde el directorio padre
+import { Box } from "@chakra-ui/react"
 
 const HomePage = () => {
   return (
-    <Box>
-      <MainContent />
-    </Box>
-  );
-};
+    <Sidebar>
+      <Box>
+        <MainContent />
+      </Box>
+    </Sidebar>
+  )
+}
 
-export default HomePage;
+export default HomePage
+

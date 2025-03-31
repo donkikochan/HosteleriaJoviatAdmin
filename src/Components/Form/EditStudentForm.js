@@ -18,6 +18,7 @@ import {
 } from "@chakra-ui/react";
 import { doc, getFirestore, getDoc, setDoc } from "firebase/firestore";
 import { app } from "../../firebaseConfig";
+import Sidebar from "../Sidebar"; // Import the Sidebar component
 
 const EditStudentForm = () => {
   const [, params] = useRoute("/edit-alumn/:id");
@@ -117,7 +118,8 @@ const EditStudentForm = () => {
     setIsOpen(true); // Show confirmation dialog
   };
 
-  return (
+  // The form content that will be wrapped by the Sidebar
+  const formContent = (
     <Box>
       <VStack bg={"white"} width={"100%"} pt={150}>
         <FormLabel
@@ -245,6 +247,9 @@ const EditStudentForm = () => {
       </AlertDialog>
     </Box>
   );
+
+  // Wrap the form content with the Sidebar component
+  return <Sidebar>{formContent}</Sidebar>;
 };
 
 export default EditStudentForm;
