@@ -29,10 +29,13 @@ import {
   AlertDialogHeader,
   AlertDialogContent,
   AlertDialogOverlay,
-  useToast
+  useToast,
+  Tag,
+  Wrap,
+  WrapItem
 } from "@chakra-ui/react"
 import { EditIcon, SearchIcon, ViewIcon, DeleteIcon } from "@chakra-ui/icons"
-import { getFirestore, collection, getDocs, doc, deleteDoc } from "firebase/firestore"
+import { getFirestore, collection, getDocs, doc, deleteDoc, getDoc } from "firebase/firestore"
 import { app } from "../../firebaseConfig"
 import { useLocation } from "wouter"
 import Sidebar from "../Sidebar" // Import the Sidebar component
@@ -44,6 +47,8 @@ const ShowAllAlumns = () => {
   const [selectedStudent, setSelectedStudent] = useState(null)
   const { isOpen, onOpen, onClose } = useDisclosure()
   const [location, navigate] = useLocation()
+  const [restaurants, setRestaurants] = useState({})
+  const [loadingRestaurants, setLoadingRestaurants] = useState(false)
   
   // Para el diálogo de confirmación de eliminación
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
@@ -55,8 +60,14 @@ const ShowAllAlumns = () => {
     navigate(`/edit-alumn/${studentId}`)
   }
   
-  const handleViewClick = (student) => {
+  const handleViewClick = async (student) => {
     setSelectedStudent(student)
+    
+    // Cargar los restaurantes del usuario si aún no se han cargado
+    if (student.id && !restaurants[student.id]) {
+      await fetchRestaurantsForUser(student.id)
+    }
+    
     onOpen()
   }
   
@@ -101,6 +112,53 @@ const ShowAllAlumns = () => {
     setStudentToDelete(null)
   }
 
+  // Función para obtener los restaurantes de un usuario
+  const fetchRestaurantsForUser = async (userId) => {
+    setLoadingRestaurants(true)
+    try {
+      const db = getFirestore(app)
+      const restaurantsCollection = collection(db, "Restaurant")
+      const restaurantsSnapshot = await getDocs(restaurantsCollection)
+      
+      const userRestaurants = []
+      
+      // Para cada restaurante, verificar si el usuario está en la subcolección "alumnes"
+      for (const restaurantDoc of restaurantsSnapshot.docs) {
+        const restaurantId = restaurantDoc.id
+        const restaurantData = restaurantDoc.data()
+        
+        // Obtener la subcolección "alumnes" del restaurante
+        const alumnesCollection = collection(db, "Restaurant", restaurantId, "alumnes")
+        const alumnesSnapshot = await getDocs(alumnesCollection)
+        
+        // Verificar si el usuario está en la subcolección y es propietario
+        const userAlumne = alumnesSnapshot.docs.find(doc => {
+          const alumneData = doc.data()
+          return alumneData.userId === userId && alumneData.propietari === true
+        })
+        
+        if (userAlumne) {
+          userRestaurants.push({
+            id: restaurantId,
+            nom: restaurantData.nom,
+            direccio: restaurantData.direccio,
+            propietari: true
+          })
+        }
+      }
+      
+      // Actualizar el estado con los restaurantes del usuario
+      setRestaurants(prev => ({
+        ...prev,
+        [userId]: userRestaurants
+      }))
+    } catch (error) {
+      console.error("Error al obtener los restaurantes del usuario:", error)
+    } finally {
+      setLoadingRestaurants(false)
+    }
+  }
+
   useEffect(() => {
     const fetchStudents = async () => {
       const db = getFirestore(app)
@@ -143,6 +201,8 @@ const ShowAllAlumns = () => {
   // Modal para mostrar los detalles del alumno
   const StudentDetailsModal = () => {
     if (!selectedStudent) return null
+    
+    const userRestaurants = restaurants[selectedStudent.id] || []
     
     return (
       <Modal isOpen={isOpen} onClose={onClose} size="lg">
@@ -197,21 +257,68 @@ const ShowAllAlumns = () => {
                   <Text>No especificat</Text>
                 )}
               </GridItem>
+              <GridItem colSpan={2}>
+                <Text fontWeight="bold" mb={2}>Restaurants (Propietari):</Text>
+                {loadingRestaurants ? (
+                  <Text>Cargando restaurantes...</Text>
+                ) : userRestaurants.length > 0 ? (
+                  <Wrap spacing={2}>
+                    {userRestaurants.map(restaurant => (
+                      <WrapItem key={restaurant.id}>
+                        <Tag size="md" colorScheme="blue" borderRadius="full">
+                          {restaurant.nom}
+                        </Tag>
+                      </WrapItem>
+                    ))}
+                  </Wrap>
+                ) : (
+                  <Text>No es propietari de cap restaurant</Text>
+                )}
+              </GridItem>
             </Grid>
           </ModalBody>
           <ModalFooter>
-            <Button colorScheme="blue" mr={3} onClick={() => handleEditClick(selectedStudent.id)}>
+            <Button colorScheme="blue" mr={3} onClick={onClose}>
+              Tancar
+            </Button>
+            <Button colorScheme="green" onClick={() => handleEditClick(selectedStudent.id)}>
               Editar
             </Button>
-            <Button colorScheme="red" mr={3} onClick={(e) => handleDeleteClick(selectedStudent, e)}>
-              Eliminar
-            </Button>
-            <Button variant="ghost" onClick={onClose}>Tancar</Button>
           </ModalFooter>
         </ModalContent>
       </Modal>
     )
   }
+
+  // Diálogo de confirmación para eliminar un alumno
+  const DeleteConfirmationDialog = () => (
+    <AlertDialog
+      isOpen={isDeleteDialogOpen}
+      leastDestructiveRef={cancelRef}
+      onClose={() => setIsDeleteDialogOpen(false)}
+    >
+      <AlertDialogOverlay>
+        <AlertDialogContent>
+          <AlertDialogHeader fontSize="lg" fontWeight="bold">
+            Eliminar Alumne
+          </AlertDialogHeader>
+
+          <AlertDialogBody>
+            Estàs segur que vols eliminar a {studentToDelete?.nom} {studentToDelete?.cognom}? Aquesta acció no es pot desfer.
+          </AlertDialogBody>
+
+          <AlertDialogFooter>
+            <Button ref={cancelRef} onClick={() => setIsDeleteDialogOpen(false)}>
+              Cancel·lar
+            </Button>
+            <Button colorScheme="red" onClick={confirmDelete} ml={3}>
+              Eliminar
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialogOverlay>
+    </AlertDialog>
+  )
 
   // The content that will be wrapped by the Sidebar
   const content = (
@@ -227,11 +334,10 @@ const ShowAllAlumns = () => {
             mb={5}
             textAlign={"center"}
           >
-            Llista d'alumnes i ex-alumnes
+            Llista d'Alumnes
           </Heading>
           
-          {/* Campo de búsqueda */}
-          <InputGroup>
+          <InputGroup maxW="md">
             <InputLeftElement pointerEvents="none">
               <SearchIcon color="gray.300" />
             </InputLeftElement>
@@ -239,8 +345,6 @@ const ShowAllAlumns = () => {
               placeholder="Buscar alumne..." 
               value={searchTerm}
               onChange={handleSearch}
-              bg="white"
-              mb={4}
             />
           </InputGroup>
           
@@ -248,100 +352,68 @@ const ShowAllAlumns = () => {
             {filteredStudents.map((student) => (
               <ListItem
                 key={student.id}
+                onClick={() => handleViewClick(student)}
                 display="flex"
                 alignItems="center"
                 justifyContent="space-between"
-                padding={2}
+                padding={4}
                 bg="white"
                 borderRadius="md"
                 shadow="base"
+                cursor="pointer"
+                _hover={{ bg: "gray.50" }}
               >
                 <HStack>
-                  <Avatar size="md" name={student.nom + " " + student.cognom} src={student.imageUrl} mr={4} />
+                  <Avatar name={student.nom + " " + student.cognom} src={student.imageUrl} />
                   <Box>
                     <Text fontWeight="bold" fontSize="lg">
                       {student.nom} {student.cognom}
                     </Text>
                     <Text fontSize="sm" color="gray.500">
-                      {student.academicStatus}
+                      {student.academicStatus || "No especificat"}
                     </Text>
                   </Box>
                 </HStack>
                 <HStack>
-                  <Button 
-                    colorScheme="teal" 
-                    size="sm" 
-                    leftIcon={<ViewIcon />} 
-                    onClick={() => handleViewClick(student)}
+                  <Button
+                    colorScheme="blue"
+                    size="sm"
+                    leftIcon={<ViewIcon />}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleViewClick(student)
+                    }}
                   >
-                    Veure dades
+                    Veure
                   </Button>
-                  <Button 
-                    colorScheme="blue" 
-                    size="sm" 
-                    ml={2} 
-                    onClick={() => handleEditClick(student.id)}
+                  <Button
+                    colorScheme="green"
+                    size="sm"
+                    leftIcon={<EditIcon />}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handleEditClick(student.id)
+                    }}
                   >
-                    <EditIcon />
+                    Editar
                   </Button>
-                  <Button 
-                    colorScheme="red" 
-                    size="sm" 
-                    ml={2} 
+                  <Button
+                    colorScheme="red"
+                    size="sm"
+                    leftIcon={<DeleteIcon />}
                     onClick={(e) => handleDeleteClick(student, e)}
                   >
-                    <DeleteIcon />
+                    Eliminar
                   </Button>
                 </HStack>
               </ListItem>
             ))}
           </List>
-          
-          {/* Mensaje cuando no hay resultados */}
-          {filteredStudents.length === 0 && (
-            <Text color="gray.500" textAlign="center" py={4}>
-              No hi ha cap alumne que coincideixi amb la cerca.
-            </Text>
-          )}
         </VStack>
       </Box>
       
-      {/* Modal para mostrar detalles del alumno */}
       <StudentDetailsModal />
-      
-      {/* Diálogo de confirmación para eliminar alumno */}
-      <AlertDialog
-        isOpen={isDeleteDialogOpen}
-        leastDestructiveRef={cancelRef}
-        onClose={() => setIsDeleteDialogOpen(false)}
-      >
-        <AlertDialogOverlay>
-          <AlertDialogContent>
-            <AlertDialogHeader fontSize="lg" fontWeight="bold">
-              Eliminar alumne
-            </AlertDialogHeader>
-
-            <AlertDialogBody>
-              {studentToDelete && (
-                <>
-                  Estàs segur que vols eliminar aquest usuari?
-                  <br />
-                  Aquesta acció no es pot desfer.
-                </>
-              )}
-            </AlertDialogBody>
-
-            <AlertDialogFooter>
-              <Button ref={cancelRef} onClick={() => setIsDeleteDialogOpen(false)}>
-                Cancel·lar
-              </Button>
-              <Button colorScheme="red" onClick={confirmDelete} ml={3}>
-                Eliminar
-              </Button>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialogOverlay>
-      </AlertDialog>
+      <DeleteConfirmationDialog />
     </Box>
   )
 
