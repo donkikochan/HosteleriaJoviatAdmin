@@ -32,8 +32,11 @@ import {
   Stack,
   InputGroup,
   InputLeftElement,
+  Badge,
+  Alert,
+  AlertIcon,
 } from "@chakra-ui/react"
-import { doc, getFirestore, getDoc, setDoc, collection, getDocs, deleteDoc } from "firebase/firestore"
+import { doc, getFirestore, getDoc, setDoc, collection, getDocs, updateDoc, deleteDoc } from "firebase/firestore"
 import { app } from "../../firebaseConfig"
 import { DeleteIcon, SearchIcon } from "@chakra-ui/icons"
 import Sidebar from "../Sidebar" // Import the Sidebar component
@@ -61,6 +64,9 @@ const EditRestaurantForm = () => {
   const [deletedUsers, setDeletedUsers] = useState([])
   const [newUsersCount, setNewUsersCount] = useState(0)
   const [searchTerm, setSearchTerm] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [loadingUsers, setLoadingUsers] = useState(true)
+  const [usersWithMissingIds, setUsersWithMissingIds] = useState([])
 
   const { isOpen, onOpen, onClose } = useDisclosure()
 
@@ -82,6 +88,7 @@ const EditRestaurantForm = () => {
           mobile: doc.data().mobile,
         }))
         setAllUsers(usersData)
+        return usersData
       } catch (error) {
         console.error("Error fetching users:", error)
         toast({
@@ -91,13 +98,16 @@ const EditRestaurantForm = () => {
           duration: 5000,
           isClosable: true,
         })
+        return []
       }
     }
 
     const fetchRestaurantData = async () => {
+      setLoadingUsers(true)
       try {
         const restaurantDocRef = doc(db, "Restaurant", restaurantId)
         const docSnap = await getDoc(restaurantDocRef)
+
         if (docSnap.exists()) {
           const data = docSnap.data()
 
@@ -109,15 +119,54 @@ const EditRestaurantForm = () => {
             ...doc.data(),
           }))
 
+          // Obtener todos los usuarios para poder buscar por nombre si falta userId
+          const allUsersData = await fetchAllUsers()
+
+          // Verificar y corregir usuarios sin userId
+          const missingIds = []
+          const updatedAlumnesData = await Promise.all(
+            alumnesData.map(async (alumne) => {
+              // Si no tiene userId pero tiene nombre, intentamos encontrarlo
+              if (!alumne.userId && alumne.nom) {
+                console.log(`Usuario sin userId encontrado: ${alumne.nom}, intentando buscar por nombre...`)
+
+                // Buscar usuario por nombre
+                const matchingUser = allUsersData.find(
+                  (user) => `${user.nom} ${user.cognom}`.toLowerCase() === alumne.nom.toLowerCase(),
+                )
+
+                if (matchingUser) {
+                  console.log(`Usuario encontrado por nombre: ${matchingUser.id}`)
+
+                  // Actualizar el documento en Firebase con el userId encontrado
+                  const alumneRef = doc(restaurantDocRef, "alumnes", alumne.id)
+                  await updateDoc(alumneRef, { userId: matchingUser.id })
+
+                  return {
+                    ...alumne,
+                    userId: matchingUser.id,
+                    userIdFixed: true, // Marcar que se ha corregido
+                  }
+                } else {
+                  missingIds.push(alumne)
+                  return alumne
+                }
+              }
+              return alumne
+            }),
+          )
+
+          setUsersWithMissingIds(missingIds)
+
           setRestaurant({
             ...data,
-            users: alumnesData,
+            users: updatedAlumnesData,
           })
 
-          console.log("Alumnes data: ", alumnesData)
-          await fetchAllUsers()
+          console.log("Alumnes data actualizada:", updatedAlumnesData)
+
           // Fetch user images
-          const userIds = alumnesData.map((alumne) => alumne.userId)
+          const userIds = updatedAlumnesData.map((alumne) => alumne.userId).filter(Boolean)
           const imagePromises = userIds.map(async (userId) => {
             if (userId) {
               const userDocRef = doc(db, "users", userId)
@@ -150,6 +199,8 @@ const EditRestaurantForm = () => {
           duration: 5000,
           isClosable: true,
         })
+      } finally {
+        setLoadingUsers(false)
       }
     }
 
@@ -211,11 +262,89 @@ const EditRestaurantForm = () => {
 
   const handleUserChange = (index, field, value) => {
     const updatedUsers = [...restaurant.users]
-    updatedUsers[index] = {
-      ...updatedUsers[index],
-      [field]: value,
+
+    // Assegurem-nos que l'índex és vàlid
+    if (index >= 0 && index < updatedUsers.length) {
+      updatedUsers[index] = { ...updatedUsers[index], [field]: value }
+
+      // Update the selected user details from the allUsers array
+      if (field === "userId") {
+        const selectedUser = allUsers.find((user) => user.id === value)
+        if (selectedUser) {
+          updatedUsers[index] = {
+            ...updatedUsers[index],
+            nom: `${selectedUser.nom} ${selectedUser.cognom}`,
+            correu: selectedUser.email,
+            image: selectedUser.imageUrl,
+            instagram: selectedUser.instagram,
+            linkedin: selectedUser.linkedin,
+            mobil: selectedUser.mobile,
+          }
+        }
+      }
+
+      setRestaurant((prev) => ({
+        ...prev,
+        users: updatedUsers,
+      }))
+    } else {
+      console.error("Índex d'usuari no vàlid:", index)
     }
-    setRestaurant((prev) => ({ ...prev, users: updatedUsers }))
+  }
+
+  // Función para asignar manualmente un userId a un usuario existente
+  const assignUserId = (userIndex, userId) => {
+    const updatedUsers = [...restaurant.users]
+    const selectedUser = allUsers.find((user) => user.id === userId)
+
+    if (selectedUser && userIndex >= 0 && userIndex < updatedUsers.length) {
+      updatedUsers[userIndex] = {
+        ...updatedUsers[userIndex],
+        userId: userId,
+        nom: `${selectedUser.nom} ${selectedUser.cognom}`,
+        correu: selectedUser.email,
+        image: selectedUser.imageUrl,
+        instagram: selectedUser.instagram,
+        linkedin: selectedUser.linkedin,
+        mobil: selectedUser.mobile,
+      }
+
+      setRestaurant((prev) => ({
+        ...prev,
+        users: updatedUsers,
+      }))
+
+      // Actualizar inmediatamente en Firebase
+      const db = getFirestore(app)
+      const restaurantDocRef = doc(db, "Restaurant", restaurantId)
+      const userDocRef = doc(restaurantDocRef, "alumnes", updatedUsers[userIndex].id)
+
+      updateDoc(userDocRef, {
+        userId: userId,
+        nom: `${selectedUser.nom} ${selectedUser.cognom}`,
+      })
+        .then(() => {
+          toast({
+            title: "Usuari actualitzat",
+            status: "success",
+            duration: 3000,
+            isClosable: true,
+          })
+
+          // Eliminar de la lista de usuarios con IDs faltantes
+          setUsersWithMissingIds((prev) => prev.filter((u) => u.id !== updatedUsers[userIndex].id))
+        })
+        .catch((error) => {
+          console.error("Error al actualizar el userId:", error)
+          toast({
+            title: "Error",
+            description: "No s'ha pogut actualitzat l'ID de l'usuari.",
+            status: "error",
+            duration: 5000,
+            isClosable: true,
+          })
+        })
+    }
   }
 
   const addUser = () => {
@@ -223,11 +352,11 @@ const EditRestaurantForm = () => {
   }
 
   const removeUser = (userIndex) => {
-    if (window.confirm("¿Estás seguro de que quieres eliminar este trabajador?")) {
+    if (window.confirm("¿Segur que vols eliminar aquest treballador?")) {
       const userToDelete = restaurant.users[userIndex]
 
       if (userToDelete.id) {
-        setDeletedUsers((prev) => [...prev, userToDelete.id])
+        setDeletedUsers((prev) => [...prev, userToDelete])
       }
 
       setRestaurant((prev) => ({
@@ -236,8 +365,8 @@ const EditRestaurantForm = () => {
       }))
 
       toast({
-        title: "Trabajador eliminado",
-        description: "El trabajador ha sido eliminado correctamente.",
+        title: "Treballador eliminat",
+        description: "El treballador s'ha eliminat correctament.",
         status: "info",
         duration: 3000,
         isClosable: true,
@@ -247,106 +376,175 @@ const EditRestaurantForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    await handleUpdate()
-  }
 
-  const handleUpdate = async () => {
+    // Verificar si hay usuarios sin userId
+    const usersWithoutId = restaurant.users.filter((user) => !user.userId)
+    if (usersWithoutId.length > 0) {
+      const confirmContinue = window.confirm(
+        `Hay ${usersWithoutId.length} usuario(s) sin ID asignado. Estos usuarios no se actualizarán correctamente. ¿Desea continuar de todos modos?`,
+      )
+      if (!confirmContinue) return
+    }
+
+    setIsSubmitting(true)
     const db = getFirestore(app)
     const restaurantDocRef = doc(db, "Restaurant", restaurantId)
 
     try {
-      // Actualizar datos principales del restaurante
-      await setDoc(
-        restaurantDocRef,
-        {
-          nom: restaurant.nom,
-          tel: restaurant.tel,
-          web: restaurant.web,
-          longitud: restaurant.longitud,
-          latitud: restaurant.latitud,
-          instagram: restaurant.instagram,
-          foto: restaurant.foto,
-          direccio: restaurant.direccio,
-          descripcio: restaurant.descripcio,
-        },
-        { merge: true },
-      )
+      // 1. Update the main restaurant document
+      const restaurantData = {
+        nom: restaurant.nom,
+        tel: restaurant.tel,
+        web: restaurant.web,
+        longitud: restaurant.longitud,
+        latitud: restaurant.latitud,
+        instagram: restaurant.instagram,
+        foto: restaurant.foto.filter((url) => url.trim() !== ""),
+        direccio: restaurant.direccio,
+        descripcio: restaurant.descripcio,
+      }
 
-      // Actualizar o crear documentos de alumnos
-      for (const user of restaurant.users) {
-        if (!user.userId) continue // Saltar si no hay userId
+      await updateDoc(restaurantDocRef, restaurantData)
 
-        // Actualizar el documento del alumno en la subcolección
-        const alumneDocRef = doc(
-          restaurantDocRef,
-          "alumnes",
-          user.id || doc(collection(restaurantDocRef, "alumnes")).id,
-        )
-        await setDoc(alumneDocRef, user, { merge: true })
+      // 2. Delete removed users from the subcollection
+      for (const deletedUser of deletedUsers) {
+        if (deletedUser && deletedUser.id) {
+          await deleteDoc(doc(restaurantDocRef, "alumnes", deletedUser.id))
 
-        // Si el usuario es propietario, actualizar su documento en la colección users
-        if (user.propietari) {
-          const userDocRef = doc(db, "users", user.userId)
-          const userDoc = await getDoc(userDocRef)
+          // Si era propietario y tiene userId, actualizar su perfil
+          if (deletedUser.propietari && deletedUser.userId) {
+            const userRef = doc(db, "users", deletedUser.userId)
+            const userDoc = await getDoc(userRef)
 
-          if (userDoc.exists()) {
-            // Obtener el array de restaurants actual o crear uno nuevo
-            const userData = userDoc.data()
-            const ownedRestaurants = userData.ownedRestaurants || []
+            if (userDoc.exists() && userDoc.data().propietari) {
+              const propietariArray = userDoc.data().propietari || []
+              // Filtrar el restaurante actual del array
+              const updatedArray = propietariArray.filter((rest) => rest && rest.id !== restaurantId)
 
-            // Verificar si este restaurante ya está en el array
-            if (!ownedRestaurants.includes(restaurantId)) {
-              ownedRestaurants.push(restaurantId)
+              // Actualizar el documento del usuario
+              await updateDoc(userRef, { propietari: updatedArray })
+              console.log(`Restaurante eliminado del array de propietario para usuario ${deletedUser.userId}`)
             }
-
-            // Actualizar el documento del usuario con el array actualizado
-            await setDoc(userDocRef, { ownedRestaurants: ownedRestaurants }, { merge: true })
           }
         }
       }
 
-      // Eliminar usuarios eliminados
-      for (const deletedUserId of deletedUsers) {
-        if (deletedUserId) {
-          // Obtener el documento del usuario antes de eliminarlo para verificar si era propietario
-          const alumneDocRef = doc(restaurantDocRef, "alumnes", deletedUserId)
-          const alumneDoc = await getDoc(alumneDocRef)
+      // 3. Update or add users in the subcollection
+      for (const user of restaurant.users) {
+        // Verificar que el usuario tenga un userId válido
+        if (!user.userId) {
+          console.warn("Usuario sin userId encontrado, saltando actualización de propietario...", user)
+          // Aún así actualizamos otros campos en la subcolección
+          if (user.id) {
+            const userDocRef = doc(restaurantDocRef, "alumnes", user.id)
+            const userData = {
+              nom: user.nom || "",
+              responsabilitat: user.responsabilitat || "",
+              propietari: Boolean(user.propietari),
+              anydeinici: user.anydeinici || "",
+              instagram: user.instagram || "",
+              linkedin: user.linkedin || "",
+              mobil: user.mobil || "",
+            }
+            await updateDoc(userDocRef, userData)
+            console.log(`Actualizado usuario sin userId: ${user.id}`)
+          }
+          continue
+        }
 
-          if (alumneDoc.exists()) {
-            const alumneData = alumneDoc.data()
+        // Determine if this is a new user or an existing one
+        const isNewUser = !user.id || user.id.startsWith("new-")
 
-            // Si el usuario eliminado era propietario, actualizar su documento en users
-            if (alumneData.propietari && alumneData.userId) {
-              const userDocRef = doc(db, "users", alumneData.userId)
-              const userDoc = await getDoc(userDocRef)
+        // Para usuarios nuevos, creamos un nuevo documento con ID generado por Firebase
+        // Para usuarios existentes, usamos su ID actual
+        const userDocRef = isNewUser
+          ? doc(collection(restaurantDocRef, "alumnes"))
+          : doc(restaurantDocRef, "alumnes", user.id)
 
-              if (userDoc.exists()) {
-                const userData = userDoc.data()
-                let ownedRestaurants = userData.ownedRestaurants || []
+        // Prepare user data - asegurarse de que todos los campos estén definidos
+        const userData = {
+          userId: user.userId,
+          nom: user.nom || "",
+          responsabilitat: user.responsabilitat || "",
+          propietari: Boolean(user.propietari),
+          anydeinici: user.anydeinici || "",
+          instagram: user.instagram || "",
+          linkedin: user.linkedin || "",
+          mobil: user.mobil || "",
+        }
 
-                // Eliminar este restaurante del array de restaurantes del propietario
-                ownedRestaurants = ownedRestaurants.filter((id) => id !== restaurantId)
+        // Save user data
+        if (isNewUser) {
+          await setDoc(userDocRef, userData)
+          console.log(`Nuevo usuario creado con userId: ${user.userId}`)
+        } else {
+          await updateDoc(userDocRef, userData)
+          console.log(`Usuario existente actualizado con userId: ${user.userId}`)
+        }
 
-                // Actualizar el documento del usuario
-                await setDoc(userDocRef, { ownedRestaurants: ownedRestaurants }, { merge: true })
-              }
+        // Si el usuario es propietario, actualizar su documento en la colección users
+        if (user.propietari) {
+          const userRef = doc(db, "users", user.userId)
+          const userDoc = await getDoc(userRef)
+
+          if (userDoc.exists()) {
+            // Información del restaurante
+            const restaurantInfo = {
+              id: restaurantId,
+              nom: restaurant.nom,
+              direccio: restaurant.direccio,
+            }
+
+            // Obtener el array de propietari actual o crear uno nuevo
+            const userData = userDoc.data()
+            const propietariArray = Array.isArray(userData.propietari) ? [...userData.propietari] : []
+
+            // Verificar si este restaurante ya está en el array
+            const restaurantIndex = propietariArray.findIndex((rest) => rest && rest.id === restaurantId)
+
+            if (restaurantIndex === -1) {
+              // Añadir el restaurante si no existe
+              propietariArray.push(restaurantInfo)
+              console.log(`Restaurante añadido al array de propietario para usuario ${user.userId}`)
+            } else {
+              // Actualizar la información del restaurante si ya existe
+              propietariArray[restaurantIndex] = restaurantInfo
+              console.log(`Información de restaurante actualizada en array de propietario para usuario ${user.userId}`)
+            }
+
+            // Actualizar el documento del usuario
+            await updateDoc(userRef, { propietari: propietariArray })
+          }
+        } else {
+          // Si el usuario no es propietario pero podría haberlo sido antes,
+          // verificar y eliminar el restaurante de su array propietari
+          const userRef = doc(db, "users", user.userId)
+          const userDoc = await getDoc(userRef)
+
+          if (userDoc.exists() && userDoc.data().propietari) {
+            const userData = userDoc.data()
+            const propietariArray = Array.isArray(userData.propietari) ? [...userData.propietari] : []
+
+            // Si el restaurante está en el array, eliminarlo
+            const restaurantIndex = propietariArray.findIndex((rest) => rest && rest.id === restaurantId)
+            if (restaurantIndex !== -1) {
+              propietariArray.splice(restaurantIndex, 1)
+              await updateDoc(userRef, { propietari: propietariArray })
+              console.log(`Restaurante eliminado del array de propietario para usuario ${user.userId}`)
             }
           }
-
-          // Eliminar el documento del alumno
-          await deleteDoc(alumneDocRef)
         }
       }
 
       toast({
-        title: "Restaurant Actualitzat",
+        title: "Restaurant actualitzat",
         description: "Les dades del restaurant han estat actualitzades amb èxit.",
         status: "success",
         duration: 5000,
         isClosable: true,
       })
+
       setDeletedUsers([]) // Reset deletedUsers after successful update
-      setAddingNewUser(false)
       navigate("/veure-restaurants")
     } catch (error) {
       console.error("Error actualitzant el restaurant:", error)
@@ -357,6 +555,8 @@ const EditRestaurantForm = () => {
         duration: 5000,
         isClosable: true,
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -377,11 +577,24 @@ const EditRestaurantForm = () => {
     }
 
     const selectedUser = allUsers.find((user) => user.id === userId)
+    if (!selectedUser) {
+      toast({
+        title: "Error",
+        description: "No se pudo encontrar el usuario seleccionado.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      })
+      onClose()
+      return
+    }
+
     setRestaurant((prev) => ({
       ...prev,
       users: sortUsers([
         ...prev.users,
         {
+          id: `new-${Date.now()}`, // Temporal ID for new users
           userId: userId,
           responsabilitat: "",
           propietari: false,
@@ -439,6 +652,20 @@ const EditRestaurantForm = () => {
           ¡Editeu els dades dels restaurants!
         </Heading>
       </VStack>
+
+      {usersWithMissingIds.length > 0 && (
+        <Alert status="warning" mb={5}>
+          <AlertIcon />
+          <Box>
+            <Text fontWeight="bold">Se encontraron {usersWithMissingIds.length} usuario(s) sin ID asignado</Text>
+            <Text>
+              Estos usuarios necesitan tener un ID asignado para poder actualizar su estado de propietario
+              correctamente. Por favor, asigne un ID a cada usuario en su pestaña correspondiente.
+            </Text>
+          </Box>
+        </Alert>
+      )}
+
       <VStack as="form" onSubmit={handleSubmit} spacing={5} maxW={800} mx="auto">
         <FormControl isRequired>
           <FormLabel>Nom del restaurant</FormLabel>
@@ -523,98 +750,157 @@ const EditRestaurantForm = () => {
           <FormLabel>Treballadors</FormLabel>
         </FormControl>
 
-        <Tabs width="100%" p={4}>
-          <TabList mb={6} spacing={4} flexWrap="wrap">
-            {groupedUsers.map((user) => (
-              <Tab key={user.userId}>
-                {user.nom
-                  ? (() => {
-                      const nameParts = user.nom.split(" ")
-                      // Si hay al menos nombre y un apellido
-                      if (nameParts.length > 1) {
-                        const firstName = nameParts[0]
-                        const firstSurname = nameParts[1]
-                        return `${firstSurname}, ${firstName}`
-                      }
-                      return user.nom
-                    })()
-                  : "Usuari"}
-              </Tab>
-            ))}
-          </TabList>
-          <TabPanels>
-            {groupedUsers.map((user, index) => (
-              <TabPanel key={user.userId}>
-                <Text fontSize="md" fontWeight="bold" color="blue.500" mb={4}>
-                  Usuaris nous afegits: {newUsersCount}
-                </Text>
-                <Box mb={6} w="100%" my={4} px={8} py={4} boxShadow={"3px 3px 8px 0 grey"} borderRadius={20}>
-                  <FormControl mt={8} isRequired>
-                    <FormLabel>Usuari</FormLabel>
-                    <Text fontSize="lg">
-                      {user.nom
-                        ? (() => {
-                            const nameParts = user.nom.split(" ")
-                            // Si hay al menos nombre y un apellido
-                            if (nameParts.length > 1) {
-                              const firstName = nameParts[0]
-                              const firstSurname = nameParts[1]
-                              return `${firstSurname}, ${firstName}`
-                            }
-                            return user.nom
-                          })()
-                        : ""}
-                    </Text>
-                  </FormControl>
-                  <FormControl mt={8} isRequired>
-                    <FormLabel>Any de inici</FormLabel>
-                    <Input
-                      placeholder="Any de inici"
-                      type="text"
-                      value={user.anydeinici || ""}
-                      onChange={(e) => handleUserChange(index, "anydeinici", e.target.value)}
-                      size="lg"
-                    />
-                  </FormControl>
-                  <FormControl mt={8} isRequired>
-                    <FormLabel>Responsabilitat</FormLabel>
-                    <Select
-                      placeholder="Seleccionar Responsabilitat"
-                      value={user.responsabilitat || ""}
-                      onChange={(e) => handleUserChange(index, "responsabilitat", e.target.value)}
-                      size="lg"
-                    >
-                      <option value="Cuiner">Cuiner</option>
-                      <option value="Cambrer">Cambrer</option>
-                      <option value="Gerent">Gerent</option>
-                      <option value="Neteja">Neteja</option>
-                      <option value="Altres">Altres</option>
-                    </Select>
-                  </FormControl>
-                  <FormControl mt={5}>
-                    <FormLabel>¿És propietari?</FormLabel>
-                    <Checkbox
-                      mb={10}
-                      isChecked={user.propietari || false}
-                      onChange={(e) => handleUserChange(index, "propietari", e.target.checked)}
-                    >
-                      És propietari
-                    </Checkbox>
-                  </FormControl>
-                  <Button colorScheme="red" onClick={() => removeUser(index)} mt={5}>
-                    <DeleteIcon />
-                  </Button>
-                </Box>
-              </TabPanel>
-            ))}
-          </TabPanels>
-        </Tabs>
+        {loadingUsers ? (
+          <Text>Cargando usuarios...</Text>
+        ) : (
+          <Tabs width="100%" p={4}>
+            <TabList mb={6} spacing={4} flexWrap="wrap">
+              {groupedUsers.map((user, idx) => (
+                <Tab key={user.id || `new-user-${idx}`}>
+                  {user.nom
+                    ? (() => {
+                        const nameParts = user.nom.split(" ")
+                        // Si hay al menos nombre y un apellido
+                        if (nameParts.length > 1) {
+                          const firstName = nameParts[0]
+                          const firstSurname = nameParts[1]
+                          return `${firstSurname}, ${firstName}`
+                        }
+                        return user.nom
+                      })()
+                    : "Usuari"}
+                  {!user.userId && (
+                    <Badge ml={2} colorScheme="red">
+                      Sin ID
+                    </Badge>
+                  )}
+                  {user.userIdFixed && (
+                    <Badge ml={2} colorScheme="green">
+                      ID Corregido
+                    </Badge>
+                  )}
+                </Tab>
+              ))}
+            </TabList>
+            <TabPanels>
+              {groupedUsers.map((user, index) => (
+                <TabPanel key={user.id || `new-user-panel-${index}`}>
+                  <Text fontSize="md" fontWeight="bold" color="blue.500" mb={4}>
+                    Usuaris nous afegits: {newUsersCount}
+                  </Text>
+                  <Box mb={6} w="100%" my={4} px={8} py={4} boxShadow={"3px 3px 8px 0 grey"} borderRadius={20}>
+                    <FormControl mt={8} isRequired>
+                      <FormLabel>Usuari</FormLabel>
+                      <Text fontSize="lg">
+                        {user.nom
+                          ? (() => {
+                              const nameParts = user.nom.split(" ")
+                              // Si hay al menos nombre y un apellido
+                              if (nameParts.length > 1) {
+                                const firstName = nameParts[0]
+                                const firstSurname = nameParts[1]
+                                return `${firstSurname}, ${firstName}`
+                              }
+                              return user.nom
+                            })()
+                          : ""}
+                      </Text>
+                    </FormControl>
+
+                    <FormControl mt={4}>
+                      <FormLabel> ID d'Usuari</FormLabel>
+                      {user.userId ? (
+                        <Text fontSize="sm" fontFamily="monospace" bg="gray.100" p={2} borderRadius="md">
+                          {user.userId}
+                        </Text>
+                      ) : (
+                        <Box>
+                          <Alert status="error" mb={2}>
+                            <AlertIcon />
+                            <Text>
+                              Este usuario no tiene un ID asignado y no se podrá actualizar correctamente su estado de
+                              propietario.
+                            </Text>
+                          </Alert>
+                          <Text mb={2}>Seleccione un usuario para asignar su ID:</Text>
+                          <Select
+                            placeholder="Seleccionar usuario"
+                            onChange={(e) => assignUserId(index, e.target.value)}
+                          >
+                            {filteredUsers.map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.cognom}, {u.nom} ({u.email})
+                              </option>
+                            ))}
+                          </Select>
+                        </Box>
+                      )}
+                    </FormControl>
+
+                    <FormControl mt={8} isRequired>
+                      <FormLabel>Any de inici</FormLabel>
+                      <Input
+                        placeholder="Any de inici"
+                        type="text"
+                        value={user.anydeinici || ""}
+                        onChange={(e) => handleUserChange(index, "anydeinici", e.target.value)}
+                        size="lg"
+                      />
+                    </FormControl>
+                    <FormControl mt={8} isRequired>
+                      <FormLabel>Responsabilitat</FormLabel>
+                      <Select
+                        placeholder="Seleccionar Responsabilitat"
+                        value={user.responsabilitat || ""}
+                        onChange={(e) => handleUserChange(index, "responsabilitat", e.target.value)}
+                        size="lg"
+                      >
+                        <option value="Cuiner">Cuiner</option>
+                        <option value="Cambrer">Cambrer</option>
+                        <option value="Gerent">Gerent</option>
+                        <option value="Neteja">Neteja</option>
+                        <option value="Altres">Altres</option>
+                      </Select>
+                    </FormControl>
+                    <FormControl mt={5}>
+                      <FormLabel>¿És propietari?</FormLabel>
+                      <Checkbox
+                        mb={10}
+                        isChecked={user.propietari || false}
+                        onChange={(e) => handleUserChange(index, "propietari", e.target.checked)}
+                        isDisabled={!user.userId}
+                      >
+                        És propietari
+                      </Checkbox>
+                      {!user.userId && (
+                        <Text fontSize="sm" color="red.500" mt={-8} mb={8}>
+                          Debe asignar un ID de usuario para poder marcar como propietario
+                        </Text>
+                      )}
+                    </FormControl>
+                    <Button colorScheme="red" onClick={() => removeUser(index)} mt={5}>
+                      <DeleteIcon />
+                    </Button>
+                  </Box>
+                </TabPanel>
+              ))}
+            </TabPanels>
+          </Tabs>
+        )}
 
         <Button onClick={addUser} colorScheme="blue" mt={5}>
           Afegir més treballadors
         </Button>
 
-        <Button mt={5} mb={20} colorScheme="blue" type="submit">
+        <Button
+          mt={5}
+          mb={20}
+          colorScheme="blue"
+          type="submit"
+          isLoading={isSubmitting}
+          loadingText="Guardant..."
+          isDisabled={loadingUsers}
+        >
           Guardar Canvis
         </Button>
       </VStack>
@@ -649,6 +935,9 @@ const EditRestaurantForm = () => {
                     <Text fontWeight="bold">{`${user.cognom}, ${user.nom}`}</Text>
                     <Text fontSize="sm" color="gray.600">
                       {user.email}
+                    </Text>
+                    <Text fontSize="xs" color="gray.500">
+                      ID: {user.id}
                     </Text>
                   </Box>
                 </Flex>
