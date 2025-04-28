@@ -1,4 +1,6 @@
-import React, { useState } from "react";
+"use client"
+
+import { useState, useRef } from "react"
 import {
   FormControl,
   FormLabel,
@@ -9,39 +11,39 @@ import {
   Select,
   Box,
   Heading,
-  Flex,
-} from "@chakra-ui/react";
-import { useLocation, Link } from "wouter";
-import Sidebar from "../Sidebar";
+  HStack,
+  AlertDialog,
+  AlertDialogBody,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogContent,
+  AlertDialogOverlay,
+} from "@chakra-ui/react"
+import { useLocation } from "wouter"
+import Sidebar from "../Sidebar"
 
-import {
-  getFirestore,
-  collection,
-  getDocs,
-  setDoc,
-  doc,
-} from "@firebase/firestore";
-import { app } from "../../firebaseConfig";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
+import { getFirestore, collection, getDocs, setDoc, doc } from "@firebase/firestore"
+import { app } from "../../firebaseConfig"
+import { getAuth, createUserWithEmailAndPassword } from "firebase/auth"
 
 const StudentsForm = () => {
   const fetchDatos = async () => {
-    console.log("Hola mundo");
-    const db = getFirestore(app);
-    const querySnapshot = await getDocs(collection(db, "users"));
-    const datosFetched = querySnapshot.docs.map((doc) => doc.data());
-    console.log(datosFetched);
-  };
-  const [nom, setNom] = useState("");
-  const [cognom, setCognom] = useState("");
-  const [correu, setCorreu] = useState("");
-  const [contrasenya, setContrasenya] = useState("");
-  const [academicStatus, setacademicStatus] = useState("");
-  const [birth, setbirth] = useState("");
-  const [username, setusername] = useState("");
-  const [linkedin, setLinkedin] = useState("");
-  const [instagram, setInstagram] = useState("");
-  const [mobile, setMobile] = useState("");
+    console.log("Hola mundo")
+    const db = getFirestore(app)
+    const querySnapshot = await getDocs(collection(db, "users"))
+    const datosFetched = querySnapshot.docs.map((doc) => doc.data())
+    console.log(datosFetched)
+  }
+  const [nom, setNom] = useState("")
+  const [cognom, setCognom] = useState("")
+  const [correu, setCorreu] = useState("")
+  const [contrasenya, setContrasenya] = useState("")
+  const [academicStatus, setacademicStatus] = useState("")
+  const [birth, setbirth] = useState("")
+  const [username, setusername] = useState("")
+  const [linkedin, setLinkedin] = useState("")
+  const [instagram, setInstagram] = useState("")
+  const [mobile, setMobile] = useState("")
   const [touchedFields, setTouchedFields] = useState({
     nom: false,
     cognom: false,
@@ -50,40 +52,54 @@ const StudentsForm = () => {
     academicStatus: false,
     birth: false,
     username: false,
-  });
-  const [location, navigate] = useLocation();
+  })
+  const [location, navigate] = useLocation()
+
+  // Estat i ref per al diàleg de confirmació
+  const [isOpen, setIsOpen] = useState(false)
+  const cancelRef = useRef()
+
+  // Funció per obrir el diàleg de confirmació
+  const onOpenDialog = () => setIsOpen(true)
+  // Funció per tancar el diàleg de confirmació
+  const onCloseDialog = () => setIsOpen(false)
+  // Funció per confirmar la cancel·lació i navegar a home
+  const handleConfirmCancel = () => {
+    onCloseDialog()
+    navigate("/home")
+  }
 
   const handleNomChange = (e) => {
-    setNom(e.target.value);
-  };
+    setNom(e.target.value)
+  }
   const handleCognomChange = (e) => {
-    setCognom(e.target.value);
-  };
+    setCognom(e.target.value)
+  }
   const handleCorreuChange = (e) => {
-    setCorreu(e.target.value);
-  };
+    setCorreu(e.target.value)
+  }
   const handleContrasenyaChange = (e) => {
-    setContrasenya(e.target.value);
-  };
+    setContrasenya(e.target.value)
+  }
   const handleacademicStatusChange = (e) => {
-    setacademicStatus(e.target.value);
-  };
+    setacademicStatus(e.target.value)
+  }
   const handlebirthChange = (e) => {
-    setbirth(e.target.value);
-  };
+    setbirth(e.target.value)
+  }
   const handleusernameChange = (e) => {
-    setusername(e.target.value);
-  };
+    setusername(e.target.value)
+  }
 
   const handleBlur = (field) => {
     setTouchedFields((prevTouchedFields) => ({
       ...prevTouchedFields,
       [field]: true,
-    }));
-  };
+    }))
+  }
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e.preventDefault()
     if (
       nom === "" ||
       cognom === "" ||
@@ -93,23 +109,18 @@ const StudentsForm = () => {
       birth === "" ||
       academicStatus === ""
     ) {
-      alert("Error: Completa todos los campos obligatorios");
+      alert("Error: Completa todos los campos obligatorios")
     } else {
-      const defaultImageUrl =
-        "https://cdn.icon-icons.com/icons2/1369/PNG/512/-person_90382.png";
+      const defaultImageUrl = "https://cdn.icon-icons.com/icons2/1369/PNG/512/-person_90382.png"
 
       try {
         // se crea usuario en Firebase Authentication
-        const auth = getAuth(app);
-        const userCredential = await createUserWithEmailAndPassword(
-          auth,
-          correu,
-          contrasenya
-        );
-        const user = userCredential.user;
+        const auth = getAuth(app)
+        const userCredential = await createUserWithEmailAndPassword(auth, correu, contrasenya)
+        const user = userCredential.user
 
         // se guardan otros datos en Firestore
-        const db = getFirestore(app);
+        const db = getFirestore(app)
         await setDoc(doc(db, "users", user.uid), {
           nom,
           cognom,
@@ -121,28 +132,25 @@ const StudentsForm = () => {
           mobile,
           imageUrl: defaultImageUrl,
           email: user.email,
-        });
+        })
 
         // se redirige al usuario a la página de éxito
-        navigate("/success");
+        navigate("/success")
       } catch (error) {
         // Manejo de  errores de Firebase Authentication
-        alert("Error al crear usuario: " + (error && error.message));
+        alert("Aquest correu ja està en ús, introdueix-ne un de nou")
       }
     }
-  };
+  }
 
   // Contenido del formulario
   const formContent = (
     <Box>
-      <VStack bg={"white"} width={"100%"} pt={50}>
-        <Box width="100%" maxW={800} px={4}>
-          <Heading
-            as="h1"
-            fontFamily="'Hanken Grotesk', Arial, sans-serif"
-            size="xl"
-            textAlign={"center"}
-          >
+      <VStack bg={"white"} width={"100%"} pt={100}>
+        {/* Augmentem el pt de 50 a 100 per donar més espai al títol */}
+        <Box width="100%" maxW={800} px={4} mt={10}>
+          {/* Afegim mt={10} per donar més marge superior al títol */}
+          <Heading as="h1" fontFamily="'Hanken Grotesk', Arial, sans-serif" size="xl" textAlign={"center"}>
             ¡Ja podeu començar a carregar les dades dels alumnes!
           </Heading>
         </Box>
@@ -158,10 +166,7 @@ const StudentsForm = () => {
             placeholder="Nom"
             isInvalid={touchedFields.nom && nom === ""}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.nom && nom === "" ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.nom && nom === "" ? "red" : "gray"}>
             Entre el nom.
           </FormHelperText>
         </FormControl>
@@ -176,10 +181,7 @@ const StudentsForm = () => {
             placeholder="Cognom"
             isInvalid={touchedFields.cognom && cognom === ""}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.cognom && cognom === "" ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.cognom && cognom === "" ? "red" : "gray"}>
             Entre el cognom.
           </FormHelperText>
         </FormControl>
@@ -194,10 +196,7 @@ const StudentsForm = () => {
             placeholder="Correu"
             isInvalid={touchedFields.correu && correu === ""}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.correu && correu === "" ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.correu && correu === "" ? "red" : "gray"}>
             Entre el correu.
           </FormHelperText>
         </FormControl>
@@ -212,12 +211,7 @@ const StudentsForm = () => {
             placeholder="Contrasenya"
             isInvalid={touchedFields.contrasenya && contrasenya === ""}
           />
-          <FormHelperText
-            mt={1}
-            color={
-              touchedFields.contrasenya && contrasenya === "" ? "red" : "gray"
-            }
-          >
+          <FormHelperText mt={1} color={touchedFields.contrasenya && contrasenya === "" ? "red" : "gray"}>
             Entre la contrasenya.
           </FormHelperText>
         </FormControl>
@@ -229,14 +223,7 @@ const StudentsForm = () => {
             <option value="Alumn">Alumn</option>
             <option value="Ex-alumn">Ex-alumn</option>
           </Select>
-          <FormHelperText
-            mt={1}
-            color={
-              touchedFields.academicStatus && academicStatus === ""
-                ? "red"
-                : "gray"
-            }
-          >
+          <FormHelperText mt={1} color={touchedFields.academicStatus && academicStatus === "" ? "red" : "gray"}>
             Seleccione l'estat academic.
           </FormHelperText>
         </FormControl>
@@ -251,10 +238,7 @@ const StudentsForm = () => {
             placeholder="Data de naixement"
             isInvalid={touchedFields.birth && birth === ""}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.birth && birth === "" ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.birth && birth === "" ? "red" : "gray"}>
             Seleccione la data de naixement.
           </FormHelperText>
         </FormControl>
@@ -268,10 +252,7 @@ const StudentsForm = () => {
             placeholder="Nom de usuari"
             isInvalid={touchedFields.username && username === ""}
           />
-          <FormHelperText
-            mt={1}
-            color={touchedFields.username && username === "" ? "red" : "gray"}
-          >
+          <FormHelperText mt={1} color={touchedFields.username && username === "" ? "red" : "gray"}>
             Entre el nom d'usuari.
           </FormHelperText>
         </FormControl>
@@ -310,18 +291,43 @@ const StudentsForm = () => {
           />
         </FormControl>
 
-        <Button mt={5} mb={20} colorScheme="blue" type="submit">
-          Carregar
-        </Button>
+        <HStack spacing={4} mt={5} mb={20}>
+          {/* Botó de cancel·lar que ara obre el diàleg de confirmació */}
+          <Button colorScheme="gray" onClick={onOpenDialog}>
+            Cancel·lar
+          </Button>
+
+          <Button colorScheme="blue" type="submit">
+            Guardar Canvis
+          </Button>
+        </HStack>
       </VStack>
+
+      {/* Diàleg de confirmació per a la cancel·lació */}
+      <AlertDialog isOpen={isOpen} leastDestructiveRef={cancelRef} onClose={onCloseDialog}>
+        <AlertDialogOverlay>
+          <AlertDialogContent>
+            <AlertDialogHeader fontSize="lg" fontWeight="bold">
+              Confirmar cancel·lació
+            </AlertDialogHeader>
+
+            <AlertDialogBody>Estàs segur que vols cancel·lar? Totes les dades introduïdes es perdran.</AlertDialogBody>
+
+            <AlertDialogFooter>
+              <Button ref={cancelRef} onClick={onCloseDialog}>
+                No, continuar editant
+              </Button>
+              <Button colorScheme="red" onClick={handleConfirmCancel} ml={3}>
+                Sí, cancel·lar
+              </Button>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialogOverlay>
+      </AlertDialog>
     </Box>
-  );
+  )
 
-  return (
-    <Sidebar>
-      {formContent}
-    </Sidebar>
-  );
-};
+  return <Sidebar>{formContent}</Sidebar>
+}
 
-export default StudentsForm;
+export default StudentsForm

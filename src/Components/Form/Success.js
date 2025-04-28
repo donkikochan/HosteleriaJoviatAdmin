@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Heading, VStack, Button } from "@chakra-ui/react";
+import { Box, Heading, VStack, Button, HStack } from "@chakra-ui/react";
 import { Link } from "wouter";
 const Success = () => {
   return (
@@ -23,13 +23,20 @@ const Success = () => {
           w={{ base: 400, md: 800 }}
           textAlign={"center"}
         >
-          Si voleu introduir un nou usuari, premeu el botó
+          Alumne afegit amb èxit, si voleu introduir un nou usuari, premeu el botó
         </Heading>
-        <Link to="/Ingressar-alumnes">
-          <Button colorScheme="blackAlpha" mt={18} mb={18}>
-            Començar el ingrés
-          </Button>
-        </Link>
+        <HStack spacing={4} mt={18} mb={18}>
+          <Link to="/Ingressar-alumnes">
+            <Button colorScheme="blackAlpha">
+              Començar el ingrés
+            </Button>
+          </Link>
+          <Link to="/home">
+            <Button colorScheme="blue">
+              Tornar a l'inici
+            </Button>
+          </Link>
+        </HStack>
       </VStack>
     </Box>
   );

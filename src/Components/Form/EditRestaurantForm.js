@@ -211,34 +211,11 @@ const EditRestaurantForm = () => {
 
   const handleUserChange = (index, field, value) => {
     const updatedUsers = [...restaurant.users]
-
-    // Assegurem-nos que l'índex és vàlid
-    if (index >= 0 && index < updatedUsers.length) {
-      updatedUsers[index] = { ...updatedUsers[index], [field]: value }
-
-      // Update the selected user details from the allUsers array
-      if (field === "userId") {
-        const selectedUser = allUsers.find((user) => user.id === value)
-        if (selectedUser) {
-          updatedUsers[index] = {
-            ...updatedUsers[index],
-            nom: `${selectedUser.nom} ${selectedUser.cognom}`,
-            correu: selectedUser.email,
-            image: selectedUser.imageUrl,
-            instagram: selectedUser.instagram,
-            linkedin: selectedUser.linkedin,
-            mobil: selectedUser.mobile,
-          }
-        }
-      }
-
-      setRestaurant((prev) => ({
-        ...prev,
-        users: updatedUsers,
-      }))
-    } else {
-      console.error("Índex d'usuari no vàlid:", index)
+    updatedUsers[index] = {
+      ...updatedUsers[index],
+      [field]: value,
     }
+    setRestaurant((prev) => ({ ...prev, users: updatedUsers }))
   }
 
   const addUser = () => {
@@ -270,10 +247,15 @@ const EditRestaurantForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    await handleUpdate()
+  }
+
+  const handleUpdate = async () => {
     const db = getFirestore(app)
     const restaurantDocRef = doc(db, "Restaurant", restaurantId)
 
     try {
+      // Actualizar datos principales del restaurante
       await setDoc(
         restaurantDocRef,
         {
@@ -290,35 +272,87 @@ const EditRestaurantForm = () => {
         { merge: true },
       )
 
-      // Delete users from the "alumnes" subcollection
-      const alumnesCollectionRef = collection(restaurantDocRef, "alumnes")
-      for (const userId of deletedUsers) {
-        const userDocRef = doc(alumnesCollectionRef, userId)
-        await deleteDoc(userDocRef)
-      }
-
-      // Update the "alumnes" subcollection
+      // Actualizar o crear documentos de alumnos
       for (const user of restaurant.users) {
-        const userDocRef = user.id ? doc(alumnesCollectionRef, user.id) : doc(alumnesCollectionRef)
-        await setDoc(userDocRef, user, { merge: true })
+        if (!user.userId) continue // Saltar si no hay userId
+
+        // Actualizar el documento del alumno en la subcolección
+        const alumneDocRef = doc(
+          restaurantDocRef,
+          "alumnes",
+          user.id || doc(collection(restaurantDocRef, "alumnes")).id,
+        )
+        await setDoc(alumneDocRef, user, { merge: true })
+
+        // Si el usuario es propietario, actualizar su documento en la colección users
+        if (user.propietari) {
+          const userDocRef = doc(db, "users", user.userId)
+          const userDoc = await getDoc(userDocRef)
+
+          if (userDoc.exists()) {
+            // Obtener el array de restaurants actual o crear uno nuevo
+            const userData = userDoc.data()
+            const ownedRestaurants = userData.ownedRestaurants || []
+
+            // Verificar si este restaurante ya está en el array
+            if (!ownedRestaurants.includes(restaurantId)) {
+              ownedRestaurants.push(restaurantId)
+            }
+
+            // Actualizar el documento del usuario con el array actualizado
+            await setDoc(userDocRef, { ownedRestaurants: ownedRestaurants }, { merge: true })
+          }
+        }
       }
 
-      setDeletedUsers([]) // Reset deletedUsers after successful update
+      // Eliminar usuarios eliminados
+      for (const deletedUserId of deletedUsers) {
+        if (deletedUserId) {
+          // Obtener el documento del usuario antes de eliminarlo para verificar si era propietario
+          const alumneDocRef = doc(restaurantDocRef, "alumnes", deletedUserId)
+          const alumneDoc = await getDoc(alumneDocRef)
+
+          if (alumneDoc.exists()) {
+            const alumneData = alumneDoc.data()
+
+            // Si el usuario eliminado era propietario, actualizar su documento en users
+            if (alumneData.propietari && alumneData.userId) {
+              const userDocRef = doc(db, "users", alumneData.userId)
+              const userDoc = await getDoc(userDocRef)
+
+              if (userDoc.exists()) {
+                const userData = userDoc.data()
+                let ownedRestaurants = userData.ownedRestaurants || []
+
+                // Eliminar este restaurante del array de restaurantes del propietario
+                ownedRestaurants = ownedRestaurants.filter((id) => id !== restaurantId)
+
+                // Actualizar el documento del usuario
+                await setDoc(userDocRef, { ownedRestaurants: ownedRestaurants }, { merge: true })
+              }
+            }
+          }
+
+          // Eliminar el documento del alumno
+          await deleteDoc(alumneDocRef)
+        }
+      }
 
       toast({
-        title: "Restaurante Actualizado",
-        description: "Los datos del restaurante se han actualizado correctamente.",
+        title: "Restaurant Actualitzat",
+        description: "Les dades del restaurant han estat actualitzades amb èxit.",
         status: "success",
         duration: 5000,
         isClosable: true,
       })
+      setDeletedUsers([]) // Reset deletedUsers after successful update
       setAddingNewUser(false)
       navigate("/veure-restaurants")
     } catch (error) {
-      console.error("Error actualizando el restaurante:", error)
+      console.error("Error actualitzant el restaurant:", error)
       toast({
         title: "Error",
-        description: "No se pudo actualizar el restaurante.",
+        description: "No s'ha pogut actualitzar el restaurant.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -636,4 +670,3 @@ const EditRestaurantForm = () => {
 }
 
 export default EditRestaurantForm
-

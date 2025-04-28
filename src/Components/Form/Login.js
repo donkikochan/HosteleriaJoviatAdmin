@@ -56,8 +56,8 @@ const LoginForm = () => {
       const userDoc = await getDoc(doc(db, "users", user.uid));
       if (userDoc.exists() && userDoc.data().role === "admin") {
         toast({
-          title: "Inicio de sesión exitoso",
-          description: "Has iniciado sesión correctamente.",
+          title: "Inici de sessió exitós",
+          description: "S'ha iniciat sessió correctament.",
           status: "success",
           duration: 5000,
           isClosable: true,

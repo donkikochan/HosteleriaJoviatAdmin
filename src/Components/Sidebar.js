@@ -11,16 +11,15 @@ import {
   Drawer,
   DrawerOverlay,
   DrawerContent,
-  DrawerCloseButton,
   DrawerBody,
   useDisclosure,
 } from "@chakra-ui/react"
-import { FiHome, FiUsers, FiPlusCircle, FiList, FiCoffee, FiMenu } from "react-icons/fi"
+import { FiHome, FiUsers, FiPlusCircle, FiList, FiCoffee, FiMenu, FiX } from "react-icons/fi"
 import { Link } from "wouter"
 
 // Definición de los elementos de navegación con las rutas correctas
 const navItems = [
-  { name: "Inicio", icon: FiHome, path: "/home" },
+  { name: "Inici", icon: FiHome, path: "/home" },
   { name: "Ingressar alumnes", icon: FiPlusCircle, path: "/Ingressar-alumnes" },
   { name: "Veure alumnes", icon: FiList, path: "/veure-alumnes" },
   { name: "Ingressar restaurants", icon: FiCoffee, path: "/Ingressar-restaurants" },
@@ -114,10 +113,25 @@ const MobileSidebar = ({ isOpen, onClose }) => {
     >
       <DrawerOverlay />
       <DrawerContent>
-        <DrawerCloseButton />
-        <DrawerBody p={0}>
-          <DesktopSidebar onClose={onClose} />
-        </DrawerBody>
+        {/* Eliminem el DrawerCloseButton estàndard que queda amagat */}
+        <Box position="relative" pt={10}>
+          {/* Afegim un botó de tancament personalitzat amb posició fixa */}
+          <IconButton
+            aria-label="Tancar menú"
+            icon={<FiX />}
+            onClick={onClose}
+            position="fixed"
+            top="20px"
+            right="20px"
+            size="lg"
+            colorScheme="blackAlpha"
+            borderRadius="full"
+            zIndex={2000}
+          />
+          <DrawerBody p={0}>
+            <DesktopSidebar onClose={onClose} />
+          </DrawerBody>
+        </Box>
       </DrawerContent>
     </Drawer>
   )
@@ -128,18 +142,35 @@ const Sidebar = ({ children }) => {
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   return (
-    <Box minH="100vh">
+    <Box minH="100vh" position="relative">
+      {/* Sidebar para escritorio */}
       <DesktopSidebar display={{ base: "none", md: "block" }} />
+
+      {/* Sidebar para móvil */}
       <MobileSidebar isOpen={isOpen} onClose={onClose} />
+
+      {/* Contenido principal */}
       <Box ml={{ base: 0, md: 60 }} p="4">
-        <Flex display={{ base: "flex", md: "none" }} alignItems="center" justifyContent="flex-start" mb={4}>
-          <IconButton variant="outline" onClick={onOpen} aria-label="abrir menú" icon={<FiMenu />} />
-        </Flex>
         {children}
       </Box>
+
+      {/* Botón flotante para dispositivos móviles (ahora en la parte superior izquierda) */}
+      <IconButton
+        aria-label="Obrir menú"
+        icon={<FiMenu />}
+        onClick={onOpen}
+        position="fixed"
+        top="80px"
+        left="20px"
+        size="lg"
+        colorScheme="blackAlpha"
+        boxShadow="lg"
+        borderRadius="full"
+        zIndex={20}
+        display={{ base: "flex", md: "none" }}
+      />
     </Box>
   )
 }
 
 export default Sidebar
-
