@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Heading, VStack, Button } from "@chakra-ui/react";
+import { Box, Heading, VStack, Button, HStack } from "@chakra-ui/react";
 import { Link } from "wouter";
 const SuccessRest = () => {
   return (
@@ -25,11 +25,18 @@ const SuccessRest = () => {
         >
           Si voleu introduir un nou restaurant, premeu el botó
         </Heading>
-        <Link to="/Ingressar-restaurants">
-          <Button colorScheme="blackAlpha" mt={18} mb={18}>
-            Començar la càrrega
-          </Button>
-        </Link>
+        <HStack spacing={4} mt={18} mb={18}>
+          <Link to="/Ingressar-restaurants">
+            <Button colorScheme="blackAlpha">
+              Començar la càrrega
+            </Button>
+          </Link>
+          <Link to="/home">
+            <Button colorScheme="blue">
+              Tornar a l'inici
+            </Button>
+          </Link>
+        </HStack>
       </VStack>
     </Box>
   );

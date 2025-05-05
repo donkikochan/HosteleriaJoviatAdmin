@@ -34,6 +34,9 @@ import {
   Spinner,
   Badge,
   Image,
+  Alert,
+  AlertIcon,
+  FormErrorMessage,
 } from "@chakra-ui/react"
 import { useLocation } from "wouter"
 import { AddIcon, DeleteIcon, SearchIcon, CloseIcon } from "@chakra-ui/icons"
@@ -89,6 +92,11 @@ const RestaurantsForm = () => {
   const [mapUrl, setMapUrl] = useState("")
   const mapRef = useRef(null)
   const [showMap, setShowMap] = useState(false)
+
+  // Estados para validación de trabajadores
+  const [validationErrors, setValidationErrors] = useState({})
+  const [tabIndex, setTabIndex] = useState(0)
+  const previousTabIndex = useRef(0)
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -335,6 +343,54 @@ const RestaurantsForm = () => {
     onOpen()
   }
 
+  // Función para validar un campo específico de un usuario
+  const validateUserField = (user, field) => {
+    if (field === "anydeinici" && !user.anydeinici) {
+      return "El año de inicio es obligatorio"
+    }
+    if (field === "responsabilitat" && !user.responsabilitat) {
+      return "La responsabilidad es obligatoria"
+    }
+    return ""
+  }
+
+  // Función para validar todos los campos de un usuario
+  const validateUser = (user, index) => {
+    const errors = {}
+
+    if (!user.anydeinici) {
+      errors[`user-${index}-anydeinici`] = "El año de inicio es obligatorio"
+    }
+
+    if (!user.responsabilitat) {
+      errors[`user-${index}-responsabilitat`] = "La responsabilidad es obligatoria"
+    }
+
+    return errors
+  }
+
+  // Función para validar todos los usuarios
+  const validateAllUsers = () => {
+    let allErrors = {}
+    let hasErrors = false
+
+    selectedUsers.forEach((user, index) => {
+      const userErrors = validateUser(user, index)
+      if (Object.keys(userErrors).length > 0) {
+        hasErrors = true
+        allErrors = { ...allErrors, ...userErrors }
+      }
+    })
+
+    setValidationErrors(allErrors)
+    return !hasErrors
+  }
+
+  // Función para verificar si un usuario tiene campos incompletos
+  const hasIncompleteFields = (user) => {
+    return !user.anydeinici || !user.responsabilitat
+  }
+
   const selectUser = (userId) => {
     // Comprovar si l'usuari ja existeix al restaurant
     const userExists = selectedUsers.some((user) => user.userId === userId)
@@ -384,15 +440,47 @@ const RestaurantsForm = () => {
   const handlePropietariChange = (e) => {
     setPropietari(e.target.checked)
   }
+
   const handleUserChange = (index, field, value) => {
-    setSelectedUsers((prev) => prev.map((item, i) => (i === index ? { ...item, [field]: value } : item)))
+    setSelectedUsers((prev) => {
+      const updatedUsers = prev.map((item, i) => (i === index ? { ...item, [field]: value } : item))
+
+      // Validar el campo después de cambiarlo
+      const fieldId = `user-${index}-${field}`
+      setTouchedFields((prev) => ({ ...prev, [fieldId]: true }))
+
+      const user = updatedUsers[index]
+      const error = validateUserField(user, field)
+      setValidationErrors((prev) => ({
+        ...prev,
+        [fieldId]: error,
+      }))
+
+      return updatedUsers
+    })
   }
 
-  const handleBlur = (field) => {
-    setTouchedFields((prevTouchedFields) => ({
-      ...prevTouchedFields,
-      [field]: true,
-    }))
+  // Función para marcar un campo como tocado
+  const handleBlur = (index, field) => {
+    if (index !== undefined) {
+      // Para campos de usuario
+      const fieldId = `user-${index}-${field}`
+      setTouchedFields((prev) => ({ ...prev, [fieldId]: true }))
+
+      // Validar el campo cuando pierde el foco
+      const user = selectedUsers[index]
+      const error = validateUserField(user, field)
+      setValidationErrors((prev) => ({
+        ...prev,
+        [fieldId]: error,
+      }))
+    } else {
+      // Para campos del restaurante
+      setTouchedFields((prevTouchedFields) => ({
+        ...prevTouchedFields,
+        [field]: true,
+      }))
+    }
   }
 
   // Función para formatear el nombre en el formato "Apellido, Nombre completo"
@@ -420,6 +508,35 @@ const RestaurantsForm = () => {
     return "Usuari"
   }
 
+  // Función para manejar el cambio de pestaña
+  const handleTabChange = (index) => {
+    // Verificar si el usuario actual tiene campos incompletos
+    const currentUser = selectedUsers[previousTabIndex.current]
+    if (currentUser && hasIncompleteFields(currentUser)) {
+      // Usar window.alert en lugar de toast para asegurar que sea visible
+      window.alert(
+        `ATENCIÓ! El treballador ${formatUserName(currentUser)} té camps obligatoris sense completar. Si us plau, ompliu tots els camps marcats amb * abans de canviar de pestanya.`,
+      )
+
+      // Resaltar los campos incompletos
+      const userIndex = previousTabIndex.current
+      setTouchedFields((prev) => ({
+        ...prev,
+        [`user-${userIndex}-anydeinici`]: true,
+        [`user-${userIndex}-responsabilitat`]: true,
+      }))
+
+      // Permitir el cambio de pestaña después de mostrar la alerta
+      setTabIndex(index)
+    } else {
+      // Si no hay campos incompletos, permitir el cambio
+      setTabIndex(index)
+    }
+
+    // Actualizar el índice anterior
+    previousTabIndex.current = index
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
 
@@ -434,12 +551,26 @@ const RestaurantsForm = () => {
     // Verificación de campos requeridos - removed descripcio
     const requiredFields = [nom, tel, web, direccio]
     if (requiredFields.some((field) => !field) || foto.every((f) => !f)) {
-      alert("Por favor, completa todos los campos obligatorios.")
+      alert("Por favor, completa todos los campos obligatorios del restaurante.")
       return
     }
 
-    if (selectedUsers.some((user) => !user.userId || !user.anydeinici || !user.responsabilitat)) {
-      alert("Por favor, completa todos los detalles de los treballadors.")
+    // Validar todos los campos de los usuarios
+    const isValid = validateAllUsers()
+
+    if (!isValid) {
+      // Marcar todos los campos como tocados para mostrar los errores
+      const touchedFieldsObj = {}
+      selectedUsers.forEach((user, index) => {
+        touchedFieldsObj[`user-${index}-anydeinici`] = true
+        touchedFieldsObj[`user-${index}-responsabilitat`] = true
+      })
+      setTouchedFields((prev) => ({ ...prev, ...touchedFieldsObj }))
+
+      // Mostrar alerta con los trabajadores que tienen campos incompletos
+      const incompleteUsers = selectedUsers.filter(hasIncompleteFields).map(formatUserName).join(", ")
+
+      alert(`Por favor, completa todos los campos obligatorios de los siguientes trabajadores: ${incompleteUsers}`)
       return
     }
 
@@ -631,7 +762,7 @@ const RestaurantsForm = () => {
             type="text"
             value={nom}
             onChange={handleNomChange}
-            onBlur={() => handleBlur("nom")}
+            onBlur={() => handleBlur(undefined, "nom")}
             placeholder="Nom del restaurant"
             isInvalid={touchedFields.nom && !nom}
           />
@@ -647,7 +778,7 @@ const RestaurantsForm = () => {
             type="text"
             value={tel}
             onChange={handleTelChange}
-            onBlur={() => handleBlur("tel")}
+            onBlur={() => handleBlur(undefined, "tel")}
             placeholder="Telèfon"
             isInvalid={touchedFields.tel && !tel}
           />
@@ -662,7 +793,7 @@ const RestaurantsForm = () => {
             type="text"
             value={web}
             onChange={handleWebChange}
-            onBlur={() => handleBlur("web")}
+            onBlur={() => handleBlur(undefined, "web")}
             placeholder="URL del lloc web"
             isInvalid={touchedFields.web && !web}
           />
@@ -678,7 +809,7 @@ const RestaurantsForm = () => {
               type="text"
               value={latitud}
               onChange={handleLatitudChange}
-              onBlur={() => handleBlur("latitud")}
+              onBlur={() => handleBlur(undefined, "latitud")}
               placeholder="Latitud geográfica"
               isInvalid={touchedFields.latitud && !latitud}
             />
@@ -693,7 +824,7 @@ const RestaurantsForm = () => {
               type="text"
               value={longitud}
               onChange={handleLongitudChange}
-              onBlur={() => handleBlur("longitud")}
+              onBlur={() => handleBlur(undefined, "longitud")}
               placeholder="Longitud geográfica"
               isInvalid={touchedFields.longitud && !longitud}
             />
@@ -710,7 +841,7 @@ const RestaurantsForm = () => {
             type="text"
             value={instagram}
             onChange={handleInstagramChange}
-            onBlur={() => handleBlur("instagram")}
+            onBlur={() => handleBlur(undefined, "instagram")}
             placeholder="Instagram (opcional)"
           />
           <FormHelperText mt={1} color="gray">
@@ -727,7 +858,7 @@ const RestaurantsForm = () => {
                 value={url}
                 onChange={(e) => handleFotosChange(index, e.target.value)}
                 placeholder="URL de la foto"
-                onBlur={() => handleBlur("foto")}
+                onBlur={() => handleBlur(undefined, "foto")}
                 isInvalid={touchedFields.foto && !url}
                 pr="4rem"
               />
@@ -758,7 +889,7 @@ const RestaurantsForm = () => {
             type="text"
             value={direccio}
             onChange={handleDireccioChange}
-            onBlur={() => handleBlur("direccio")}
+            onBlur={() => handleBlur(undefined, "direccio")}
             placeholder="Direcció"
             isInvalid={touchedFields.direccio && !direccio}
           />
@@ -774,10 +905,26 @@ const RestaurantsForm = () => {
             <FormLabel my={7}>Treballadors</FormLabel>
 
             {selectedUsers.length > 0 ? (
-              <Tabs width="100%" p={4}>
+              <Tabs width="100%" p={4} index={tabIndex} onChange={handleTabChange}>
                 <TabList mb={6} spacing={4} flexWrap="wrap">
-                  {groupedUsers.map((user) => (
-                    <Tab key={user.userId}>{formatUserName(user)}</Tab>
+                  {groupedUsers.map((user, idx) => (
+                    <Tab
+                      key={user.userId}
+                      _selected={
+                        hasIncompleteFields(user)
+                          ? { color: "red.500", borderColor: "red.500", fontWeight: "bold" }
+                          : {}
+                      }
+                      color={hasIncompleteFields(user) ? "red.500" : "inherit"}
+                      fontWeight={hasIncompleteFields(user) ? "bold" : "normal"}
+                    >
+                      {formatUserName(user)}
+                      {hasIncompleteFields(user) && (
+                        <Badge ml={2} colorScheme="red" fontWeight="bold">
+                          Incomplert!
+                        </Badge>
+                      )}
+                    </Tab>
                   ))}
                 </TabList>
                 <TabPanels>
@@ -791,22 +938,40 @@ const RestaurantsForm = () => {
                           <FormLabel>Usuari</FormLabel>
                           <Text fontSize="lg">{formatUserName(user)}</Text>
                         </FormControl>
-                        <FormControl mt={8} isRequired>
+
+                        <FormControl
+                          mt={8}
+                          isRequired
+                          isInvalid={
+                            touchedFields[`user-${index}-anydeinici`] && validationErrors[`user-${index}-anydeinici`]
+                          }
+                        >
                           <FormLabel>Any de inici</FormLabel>
                           <Input
                             placeholder="Any de inici"
                             type="text"
                             value={user.anydeinici || ""}
                             onChange={(e) => handleUserChange(index, "anydeinici", e.target.value)}
+                            onBlur={() => handleBlur(index, "anydeinici")}
                             size="lg"
                           />
+                          <FormErrorMessage>{validationErrors[`user-${index}-anydeinici`]}</FormErrorMessage>
                         </FormControl>
-                        <FormControl mt={8} isRequired>
+
+                        <FormControl
+                          mt={8}
+                          isRequired
+                          isInvalid={
+                            touchedFields[`user-${index}-responsabilitat`] &&
+                            validationErrors[`user-${index}-responsabilitat`]
+                          }
+                        >
                           <FormLabel>Responsabilitat</FormLabel>
                           <Select
                             placeholder="Seleccionar Responsabilitat"
                             value={user.responsabilitat || ""}
                             onChange={(e) => handleUserChange(index, "responsabilitat", e.target.value)}
+                            onBlur={() => handleBlur(index, "responsabilitat")}
                             size="lg"
                           >
                             <option value="Cuiner">Cuiner</option>
@@ -815,7 +980,9 @@ const RestaurantsForm = () => {
                             <option value="Neteja">Neteja</option>
                             <option value="Altres">Altres</option>
                           </Select>
+                          <FormErrorMessage>{validationErrors[`user-${index}-responsabilitat`]}</FormErrorMessage>
                         </FormControl>
+
                         <FormControl mt={5}>
                           <FormLabel>¿És propietari?</FormLabel>
                           <Checkbox
@@ -826,6 +993,16 @@ const RestaurantsForm = () => {
                             És propietari
                           </Checkbox>
                         </FormControl>
+
+                        {hasIncompleteFields(user) && (
+                          <Alert status="warning" mb={4}>
+                            <AlertIcon />
+                            <Text>  
+                              Aquest treballador te camps obligatoris per completar. Si us plau, ompliu tots els camps marcats amb *.
+                            </Text>
+                          </Alert>
+                        )}
+
                         <Button colorScheme="red" onClick={() => removeWorker(index)} mt={5}>
                           <DeleteIcon />
                         </Button>
@@ -875,7 +1052,7 @@ const RestaurantsForm = () => {
                 >
                   <Avatar src={user.imageUrl} name={`${user.nom} ${user.cognom}`} mr={3} />
                   <Box>
-                    <Text fontWeight="bold">{`${user.cognom}, ${user.nom}`}</Text>
+                    <Text fontWeight="bold">{`${user.cognom}${user.segonCognom ? ` ${user.segonCognom}` : ""}, ${user.nom}`}</Text>
                     <Text fontSize="sm" color="gray.600">
                       {user.email}
                     </Text>

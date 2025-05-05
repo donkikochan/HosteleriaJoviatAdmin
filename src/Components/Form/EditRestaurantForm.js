@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { useRoute, useLocation } from "wouter"
 import {
   Box,
@@ -35,6 +35,7 @@ import {
   Badge,
   Alert,
   AlertIcon,
+  FormErrorMessage,
 } from "@chakra-ui/react"
 import { doc, getFirestore, getDoc, setDoc, collection, getDocs, updateDoc, deleteDoc } from "firebase/firestore"
 import { app } from "../../firebaseConfig"
@@ -68,6 +69,12 @@ const EditRestaurantForm = () => {
   const [loadingUsers, setLoadingUsers] = useState(true)
   const [usersWithMissingIds, setUsersWithMissingIds] = useState([])
 
+  // Estados para validación de trabajadores
+  const [touchedFields, setTouchedFields] = useState({})
+  const [validationErrors, setValidationErrors] = useState({})
+  const [tabIndex, setTabIndex] = useState(0)
+  const previousTabIndex = useRef(0)
+
   const { isOpen, onOpen, onClose } = useDisclosure()
 
   useEffect(() => {
@@ -94,7 +101,7 @@ const EditRestaurantForm = () => {
         console.error("Error fetching users:", error)
         toast({
           title: "Error",
-          description: "No se pudieron obtener los usuarios.",
+          description: "No s'han pogut obtenir els usuaris.",
           status: "error",
           duration: 5000,
           isClosable: true,
@@ -184,7 +191,7 @@ const EditRestaurantForm = () => {
         } else {
           toast({
             title: "Error",
-            description: "No se encontró el restaurante.",
+            description: "No s'ha trobat el restaurant.",
             status: "error",
             duration: 5000,
             isClosable: true,
@@ -251,6 +258,49 @@ const EditRestaurantForm = () => {
     setRestaurant((prev) => ({ ...prev, foto: filteredFotos }))
   }
 
+  // Función para validar un campo específico de un usuario
+  const validateUserField = (user, field) => {
+    if (field === "anydeinici" && !user.anydeinici) {
+      return "L'any d'inici és obligatori"
+    }
+    if (field === "responsabilitat" && !user.responsabilitat) {
+      return "La responsabilitat és obligatòria"
+    }
+    return ""
+  }
+
+  // Función para validar todos los campos de un usuario
+  const validateUser = (user, index) => {
+    const errors = {}
+
+    if (!user.anydeinici) {
+      errors[`user-${index}-anydeinici`] = "L'any d'inici és obligatori"
+    }
+
+    if (!user.responsabilitat) {
+      errors[`user-${index}-responsabilitat`] = "La responsabilitat és obligatòria"
+    }
+
+    return errors
+  }
+
+  // Función para validar todos los usuarios
+  const validateAllUsers = () => {
+    let allErrors = {}
+    let hasErrors = false
+
+    restaurant.users.forEach((user, index) => {
+      const userErrors = validateUser(user, index)
+      if (Object.keys(userErrors).length > 0) {
+        hasErrors = true
+        allErrors = { ...allErrors, ...userErrors }
+      }
+    })
+
+    setValidationErrors(allErrors)
+    return !hasErrors
+  }
+
   const handleUserChange = (index, field, value) => {
     const updatedUsers = [...restaurant.users]
 
@@ -280,9 +330,38 @@ const EditRestaurantForm = () => {
         ...prev,
         users: updatedUsers,
       }))
+
+      // Validar el campo después de cambiarlo
+      const fieldId = `user-${index}-${field}`
+      setTouchedFields((prev) => ({ ...prev, [fieldId]: true }))
+
+      const error = validateUserField(updatedUsers[index], field)
+      setValidationErrors((prev) => ({
+        ...prev,
+        [fieldId]: error,
+      }))
     } else {
       console.error("Índex d'usuari no vàlid:", index)
     }
+  }
+
+  // Función para marcar un campo como tocado
+  const handleBlur = (index, field) => {
+    const fieldId = `user-${index}-${field}`
+    setTouchedFields((prev) => ({ ...prev, [fieldId]: true }))
+
+    // Validar el campo cuando pierde el foco
+    const user = restaurant.users[index]
+    const error = validateUserField(user, field)
+    setValidationErrors((prev) => ({
+      ...prev,
+      [fieldId]: error,
+    }))
+  }
+
+  // Función para verificar si un usuario tiene campos incompletos
+  const hasIncompleteFields = (user) => {
+    return !user.anydeinici || !user.responsabilitat
   }
 
   // Función para asignar manualmente un userId a un usuario existente
@@ -349,7 +428,7 @@ const EditRestaurantForm = () => {
   }
 
   const removeUser = (userIndex) => {
-    if (window.confirm("¿Segur que vols eliminar aquest treballador?")) {
+    if (window.confirm("Segur que vols eliminar aquest treballador?")) {
       const userToDelete = restaurant.users[userIndex]
 
       if (userToDelete.id) {
@@ -371,14 +450,68 @@ const EditRestaurantForm = () => {
     }
   }
 
+  // Función para manejar el cambio de pestaña
+  const handleTabChange = (index) => {
+    // Verificar si el usuario actual tiene campos incompletos
+    const currentUser = restaurant.users[previousTabIndex.current]
+    if (currentUser && hasIncompleteFields(currentUser)) {
+      // Usar window.alert en lugar de toast para asegurar que sea visible
+      window.alert(
+        `ATENCIÓ! El treballador ${formatUserName(currentUser)} té camps obligatoris sense completar. Si us plau, ompliu tots els camps marcats amb * abans de canviar de pestanya.`,
+      )
+
+      // Resaltar los campos incompletos
+      const userIndex = previousTabIndex.current
+      setTouchedFields((prev) => ({
+        ...prev,
+        [`user-${userIndex}-anydeinici`]: true,
+        [`user-${userIndex}-responsabilitat`]: true,
+      }))
+
+      // Permitir el cambio de pestaña después de mostrar la alerta
+      setTabIndex(index)
+    } else {
+      // Si no hay campos incompletos, permitir el cambio
+      setTabIndex(index)
+    }
+
+    // Actualizar el índice anterior
+    previousTabIndex.current = index
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Validar todos los campos de los usuarios
+    const isValid = validateAllUsers()
+
+    if (!isValid) {
+      // Marcar todos los campos como tocados para mostrar los errores
+      const touchedFieldsObj = {}
+      restaurant.users.forEach((user, index) => {
+        touchedFieldsObj[`user-${index}-anydeinici`] = true
+        touchedFieldsObj[`user-${index}-responsabilitat`] = true
+      })
+      setTouchedFields((prev) => ({ ...prev, ...touchedFieldsObj }))
+
+      // Mostrar alerta con los trabajadores que tienen campos incompletos
+      const incompleteUsers = restaurant.users.filter(hasIncompleteFields).map(formatUserName).join(", ")
+
+      toast({
+        title: "Error de validació",
+        description: `Si us plau, completeu tots els camps obligatoris dels següents treballadors: ${incompleteUsers}`,
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      })
+      return
+    }
 
     // Verificar si hay usuarios sin userId
     const usersWithoutId = restaurant.users.filter((user) => !user.userId)
     if (usersWithoutId.length > 0) {
       const confirmContinue = window.confirm(
-        `Hay ${usersWithoutId.length} usuario(s) sin ID asignado. Estos usuarios no se actualizarán correctamente. ¿Desea continuar de todos modos?`,
+        `Hi ha ${usersWithoutId.length} usuari(s) sense ID assignat. Aquests usuaris no s'actualitzaran correctament. Voleu continuar igualment?`,
       )
       if (!confirmContinue) return
     }
@@ -579,7 +712,7 @@ const EditRestaurantForm = () => {
     if (!selectedUser) {
       toast({
         title: "Error",
-        description: "No se pudo encontrar el usuario seleccionado.",
+        description: "No s'ha pogut trobar l'usuari seleccionat.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -675,7 +808,7 @@ const EditRestaurantForm = () => {
           mb={5}
           textAlign={"center"}
         >
-          ¡Editeu els dades dels restaurants!
+          Editeu les dades dels restaurants!
         </Heading>
       </VStack>
 
@@ -683,10 +816,10 @@ const EditRestaurantForm = () => {
         <Alert status="warning" mb={5}>
           <AlertIcon />
           <Box>
-            <Text fontWeight="bold">Se encontraron {usersWithMissingIds.length} usuario(s) sin ID asignado</Text>
+            <Text fontWeight="bold">S'han trobat {usersWithMissingIds.length} usuari(s) sense ID assignat</Text>
             <Text>
-              Estos usuarios necesitan tener un ID asignado para poder actualizar su estado de propietario
-              correctamente. Por favor, asigne un ID a cada usuario en su pestaña correspondiente.
+              Aquests usuaris necessiten tenir un ID assignat per poder actualitzar el seu estat de propietari
+              correctament. Si us plau, assigneu un ID a cada usuari a la seva pestanya corresponent.
             </Text>
           </Box>
         </Alert>
@@ -777,21 +910,33 @@ const EditRestaurantForm = () => {
         </FormControl>
 
         {loadingUsers ? (
-          <Text>Cargando usuarios...</Text>
+          <Text>Carregant usuaris...</Text>
         ) : (
-          <Tabs width="100%" p={4}>
+          <Tabs width="100%" p={4} index={tabIndex} onChange={handleTabChange}>
             <TabList mb={6} spacing={4} flexWrap="wrap">
               {groupedUsers.map((user, idx) => (
-                <Tab key={user.id || `new-user-${idx}`}>
+                <Tab
+                  key={user.id || `new-user-${idx}`}
+                  _selected={
+                    hasIncompleteFields(user) ? { color: "red.500", borderColor: "red.500", fontWeight: "bold" } : {}
+                  }
+                  color={hasIncompleteFields(user) ? "red.500" : "inherit"}
+                  fontWeight={hasIncompleteFields(user) ? "bold" : "normal"}
+                >
                   {formatUserName(user)}
                   {!user.userId && (
                     <Badge ml={2} colorScheme="red">
-                      Sin ID
+                      Sense ID
                     </Badge>
                   )}
                   {user.userIdFixed && (
                     <Badge ml={2} colorScheme="green">
-                      ID Corregido
+                      ID Corregit
+                    </Badge>
+                  )}
+                  {hasIncompleteFields(user) && (
+                    <Badge ml={2} colorScheme="red" fontWeight="bold">
+                      INCOMPLET!
                     </Badge>
                   )}
                 </Tab>
@@ -810,7 +955,7 @@ const EditRestaurantForm = () => {
                     </FormControl>
 
                     <FormControl mt={4}>
-                      <FormLabel> ID d'Usuari</FormLabel>
+                      <FormLabel>ID d'Usuari</FormLabel>
                       {user.userId ? (
                         <Text fontSize="sm" fontFamily="monospace" bg="gray.100" p={2} borderRadius="md">
                           {user.userId}
@@ -820,13 +965,13 @@ const EditRestaurantForm = () => {
                           <Alert status="error" mb={2}>
                             <AlertIcon />
                             <Text>
-                              Este usuario no tiene un ID asignado y no se podrá actualizar correctamente su estado de
-                              propietario.
+                              Aquest usuari no té un ID assignat i no es podrà actualitzar correctament el seu estat de
+                              propietari.
                             </Text>
                           </Alert>
-                          <Text mb={2}>Seleccione un usuario para asignar su ID:</Text>
+                          <Text mb={2}>Seleccioneu un usuari per assignar el seu ID:</Text>
                           <Select
-                            placeholder="Seleccionar usuario"
+                            placeholder="Seleccionar usuari"
                             onChange={(e) => assignUserId(index, e.target.value)}
                           >
                             {filteredUsers.map((u) => (
@@ -839,22 +984,39 @@ const EditRestaurantForm = () => {
                       )}
                     </FormControl>
 
-                    <FormControl mt={8} isRequired>
-                      <FormLabel>Any de inici</FormLabel>
+                    <FormControl
+                      mt={8}
+                      isRequired
+                      isInvalid={
+                        touchedFields[`user-${index}-anydeinici`] && validationErrors[`user-${index}-anydeinici`]
+                      }
+                    >
+                      <FormLabel>Any d'inici</FormLabel>
                       <Input
-                        placeholder="Any de inici"
+                        placeholder="Any d'inici"
                         type="text"
                         value={user.anydeinici || ""}
                         onChange={(e) => handleUserChange(index, "anydeinici", e.target.value)}
+                        onBlur={() => handleBlur(index, "anydeinici")}
                         size="lg"
                       />
+                      <FormErrorMessage>{validationErrors[`user-${index}-anydeinici`]}</FormErrorMessage>
                     </FormControl>
-                    <FormControl mt={8} isRequired>
+
+                    <FormControl
+                      mt={8}
+                      isRequired
+                      isInvalid={
+                        touchedFields[`user-${index}-responsabilitat`] &&
+                        validationErrors[`user-${index}-responsabilitat`]
+                      }
+                    >
                       <FormLabel>Responsabilitat</FormLabel>
                       <Select
                         placeholder="Seleccionar Responsabilitat"
                         value={user.responsabilitat || ""}
                         onChange={(e) => handleUserChange(index, "responsabilitat", e.target.value)}
+                        onBlur={() => handleBlur(index, "responsabilitat")}
                         size="lg"
                       >
                         <option value="Cuiner">Cuiner</option>
@@ -863,9 +1025,11 @@ const EditRestaurantForm = () => {
                         <option value="Neteja">Neteja</option>
                         <option value="Altres">Altres</option>
                       </Select>
+                      <FormErrorMessage>{validationErrors[`user-${index}-responsabilitat`]}</FormErrorMessage>
                     </FormControl>
+
                     <FormControl mt={5}>
-                      <FormLabel>¿És propietari?</FormLabel>
+                      <FormLabel>És propietari?</FormLabel>
                       <Checkbox
                         mb={10}
                         isChecked={user.propietari || false}
@@ -876,10 +1040,21 @@ const EditRestaurantForm = () => {
                       </Checkbox>
                       {!user.userId && (
                         <Text fontSize="sm" color="red.500" mt={-8} mb={8}>
-                          Debe asignar un ID de usuario para poder marcar como propietario
+                          Cal assignar un ID d'usuari per poder marcar com a propietari
                         </Text>
                       )}
                     </FormControl>
+
+                    {hasIncompleteFields(user) && (
+                      <Alert status="warning" mb={4}>
+                        <AlertIcon />
+                        <Text>
+                          Aquest treballador té camps obligatoris sense completar. Si us plau, ompliu tots els camps
+                          marcats amb *.
+                        </Text>
+                      </Alert>
+                    )}
+
                     <Button colorScheme="red" onClick={() => removeUser(index)} mt={5}>
                       <DeleteIcon />
                     </Button>
