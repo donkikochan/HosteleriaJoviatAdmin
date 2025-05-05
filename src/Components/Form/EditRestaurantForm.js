@@ -86,6 +86,7 @@ const EditRestaurantForm = () => {
           instagram: doc.data().instagram,
           linkedin: doc.data().linkedin,
           mobile: doc.data().mobile,
+          segonCognom: doc.data().segonCognom,
         }))
         setAllUsers(usersData)
         return usersData
@@ -209,29 +210,19 @@ const EditRestaurantForm = () => {
 
   const sortUsers = (users) => {
     return users.sort((a, b) => {
-      // Handle cases where nom might be undefined
-      const nameA = a.nom || ""
-      const nameB = b.nom || ""
+      // Usar directamente el campo cognom si existe
+      const cognomA = a?.cognom || ""
+      const cognomB = b?.cognom || ""
 
-      // Split names into parts
-      const fullNameA = nameA.split(" ")
-      const fullNameB = nameB.split(" ")
-
-      // Get surnames with fallbacks
-      const firstSurnameA =
-        fullNameA.length > 1 ? (fullNameA[1] || "").toLowerCase() : (fullNameA[0] || "").toLowerCase()
-      const firstSurnameB =
-        fullNameB.length > 1 ? (fullNameB[1] || "").toLowerCase() : (fullNameB[0] || "").toLowerCase()
-
-      // Safe comparison with empty string fallback
-      const firstLetterA = firstSurnameA[0] || ""
-      const firstLetterB = firstSurnameB[0] || ""
-
-      if (firstLetterA !== firstLetterB) {
-        return firstLetterA.localeCompare(firstLetterB)
+      // Comparar por apellido primero
+      if (cognomA.toLowerCase() !== cognomB.toLowerCase()) {
+        return cognomA.toLowerCase().localeCompare(cognomB.toLowerCase())
       }
 
-      return firstSurnameA.localeCompare(firstSurnameB || "")
+      // Si los apellidos son iguales, comparar por nombre
+      const nomA = a?.nom || ""
+      const nomB = b?.nom || ""
+      return nomA.toLowerCase().localeCompare(nomB.toLowerCase())
     })
   }
 
@@ -273,7 +264,9 @@ const EditRestaurantForm = () => {
         if (selectedUser) {
           updatedUsers[index] = {
             ...updatedUsers[index],
-            nom: `${selectedUser.nom} ${selectedUser.cognom}`,
+            nom: selectedUser.nom,
+            cognom: selectedUser.cognom,
+            segonCognom: selectedUser.segonCognom,
             correu: selectedUser.email,
             image: selectedUser.imageUrl,
             instagram: selectedUser.instagram,
@@ -301,7 +294,9 @@ const EditRestaurantForm = () => {
       updatedUsers[userIndex] = {
         ...updatedUsers[userIndex],
         userId: userId,
-        nom: `${selectedUser.nom} ${selectedUser.cognom}`,
+        nom: selectedUser.nom,
+        cognom: selectedUser.cognom,
+        segonCognom: selectedUser.segonCognom,
         correu: selectedUser.email,
         image: selectedUser.imageUrl,
         instagram: selectedUser.instagram,
@@ -321,7 +316,9 @@ const EditRestaurantForm = () => {
 
       updateDoc(userDocRef, {
         userId: userId,
-        nom: `${selectedUser.nom} ${selectedUser.cognom}`,
+        nom: selectedUser.nom,
+        cognom: selectedUser.cognom,
+        segonCognom: selectedUser.segonCognom || "",
       })
         .then(() => {
           toast({
@@ -465,12 +462,14 @@ const EditRestaurantForm = () => {
         const userData = {
           userId: user.userId,
           nom: user.nom || "",
+          cognom: user.cognom || "",
           responsabilitat: user.responsabilitat || "",
           propietari: Boolean(user.propietari),
           anydeinici: user.anydeinici || "",
           instagram: user.instagram || "",
           linkedin: user.linkedin || "",
           mobil: user.mobil || "",
+          segonCognom: user.segonCognom || "",
         }
 
         // Save user data
@@ -599,7 +598,9 @@ const EditRestaurantForm = () => {
           responsabilitat: "",
           propietari: false,
           anydeinici: "",
-          nom: selectedUser ? `${selectedUser.nom} ${selectedUser.cognom}` : "",
+          nom: selectedUser ? selectedUser.nom : "",
+          cognom: selectedUser ? selectedUser.cognom : "",
+          segonCognom: selectedUser ? selectedUser.segonCognom : "",
           correu: selectedUser ? selectedUser.email : "",
           image: selectedUser ? selectedUser.imageUrl : "",
           instagram: selectedUser ? selectedUser.instagram : "",
@@ -634,6 +635,31 @@ const EditRestaurantForm = () => {
         user.email.toLowerCase().includes(searchTerm.toLowerCase()),
     ),
   )
+
+  // Función para formatear el nombre en el formato "Apellido, Nombre completo"
+  const formatUserName = (user) => {
+    if (user.cognom) {
+      // Si tiene cognom, usar el formato "Apellido, Nombre"
+      const secondLastName = user.segonCognom ? ` ${user.segonCognom}` : ""
+      return `${user.cognom}${secondLastName}, ${user.nom}`
+    } else if (user.nom) {
+      // Si no tiene cognom pero tiene nom, intentar extraer el apellido del nombre completo
+      const fullName = user.nom
+      const nameParts = fullName.split(" ")
+
+      // Si hay al menos dos partes, asumir que la última es el apellido
+      if (nameParts.length > 1) {
+        const lastName = nameParts.pop() // Extraer el último elemento como apellido
+        const firstName = nameParts.join(" ") // El resto es el nombre
+        return `${lastName}, ${firstName}`
+      }
+
+      // Si solo hay una parte, mostrarla tal cual
+      return fullName
+    }
+
+    return "Usuari"
+  }
 
   // The form content that will be wrapped by the Sidebar
   const formContent = (
@@ -757,18 +783,7 @@ const EditRestaurantForm = () => {
             <TabList mb={6} spacing={4} flexWrap="wrap">
               {groupedUsers.map((user, idx) => (
                 <Tab key={user.id || `new-user-${idx}`}>
-                  {user.nom
-                    ? (() => {
-                        const nameParts = user.nom.split(" ")
-                        // Si hay al menos nombre y un apellido
-                        if (nameParts.length > 1) {
-                          const firstName = nameParts[0]
-                          const firstSurname = nameParts[1]
-                          return `${firstSurname}, ${firstName}`
-                        }
-                        return user.nom
-                      })()
-                    : "Usuari"}
+                  {formatUserName(user)}
                   {!user.userId && (
                     <Badge ml={2} colorScheme="red">
                       Sin ID
@@ -791,20 +806,7 @@ const EditRestaurantForm = () => {
                   <Box mb={6} w="100%" my={4} px={8} py={4} boxShadow={"3px 3px 8px 0 grey"} borderRadius={20}>
                     <FormControl mt={8} isRequired>
                       <FormLabel>Usuari</FormLabel>
-                      <Text fontSize="lg">
-                        {user.nom
-                          ? (() => {
-                              const nameParts = user.nom.split(" ")
-                              // Si hay al menos nombre y un apellido
-                              if (nameParts.length > 1) {
-                                const firstName = nameParts[0]
-                                const firstSurname = nameParts[1]
-                                return `${firstSurname}, ${firstName}`
-                              }
-                              return user.nom
-                            })()
-                          : ""}
-                      </Text>
+                      <Text fontSize="lg">{formatUserName(user)}</Text>
                     </FormControl>
 
                     <FormControl mt={4}>
@@ -932,7 +934,7 @@ const EditRestaurantForm = () => {
                 >
                   <Avatar src={user.imageUrl} name={`${user.nom} ${user.cognom}`} mr={3} />
                   <Box>
-                    <Text fontWeight="bold">{`${user.cognom}, ${user.nom}`}</Text>
+                    <Text fontWeight="bold">{`${user.cognom}${user.segonCognom ? ` ${user.segonCognom}` : ""}, ${user.nom}`}</Text>
                     <Text fontSize="sm" color="gray.600">
                       {user.email}
                     </Text>

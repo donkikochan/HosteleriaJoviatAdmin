@@ -197,8 +197,8 @@ const RestaurantsForm = () => {
         const lng =
           typeof place.geometry.location.lng === "function"
             ? place.geometry.location.lng()
-              : place.geometry.location.lng
-            
+            : place.geometry.location.lng
+
         console.log("Datos de geometría recibidos:", place.geometry)
 
         // Convert to string for the state
@@ -313,29 +313,19 @@ const RestaurantsForm = () => {
 
   const sortUsers = (users) => {
     return users.sort((a, b) => {
-      // Handle cases where nom might be undefined
-      const nameA = a?.nom || ""
-      const nameB = b?.nom || ""
+      // Usar directamente el campo cognom si existe
+      const cognomA = a?.cognom || ""
+      const cognomB = b?.cognom || ""
 
-      // Split names into parts
-      const fullNameA = nameA.split(" ")
-      const fullNameB = nameB.split(" ")
-
-      // Get surnames with fallbacks
-      const firstSurnameA =
-        fullNameA.length > 1 ? (fullNameA[1] || "").toLowerCase() : (fullNameA[0] || "").toLowerCase()
-      const firstSurnameB =
-        fullNameB.length > 1 ? (fullNameB[1] || "").toLowerCase() : (fullNameB[0] || "").toLowerCase()
-
-      // Safe comparison with empty string fallback
-      const firstLetterA = firstSurnameA[0] || ""
-      const firstLetterB = firstSurnameB[0] || ""
-
-      if (firstLetterA !== firstLetterB) {
-        return firstLetterA.localeCompare(firstLetterB)
+      // Comparar por apellido primero
+      if (cognomA.toLowerCase() !== cognomB.toLowerCase()) {
+        return cognomA.toLowerCase().localeCompare(cognomB.toLowerCase())
       }
 
-      return firstSurnameA.localeCompare(firstSurnameB || "")
+      // Si los apellidos son iguales, comparar por nombre
+      const nomA = a?.nom || ""
+      const nomB = b?.nom || ""
+      return nomA.toLowerCase().localeCompare(nomB.toLowerCase())
     })
   }
 
@@ -364,7 +354,9 @@ const RestaurantsForm = () => {
           responsabilitat: "",
           propietari: false,
           anydeinici: "",
-          nom: selectedUser ? `${selectedUser.nom} ${selectedUser.cognom}` : "",
+          nom: selectedUser ? selectedUser.nom : "",
+          cognom: selectedUser ? selectedUser.cognom : "",
+          segonCognom: selectedUser ? selectedUser.segonCognom : "",
           correu: selectedUser ? selectedUser.email : "",
           image: selectedUser ? selectedUser.imageUrl : "",
           instagram: selectedUser ? selectedUser.instagram : "",
@@ -401,6 +393,31 @@ const RestaurantsForm = () => {
       ...prevTouchedFields,
       [field]: true,
     }))
+  }
+
+  // Función para formatear el nombre en el formato "Apellido, Nombre completo"
+  const formatUserName = (user) => {
+    if (user.cognom) {
+      // Si tiene cognom, usar el formato "Apellido, Nombre"
+      const secondLastName = user.segonCognom ? ` ${user.segonCognom}` : ""
+      return `${user.cognom}${secondLastName}, ${user.nom}`
+    } else if (user.nom) {
+      // Si no tiene cognom pero tiene nom, intentar extraer el apellido del nombre completo
+      const fullName = user.nom
+      const nameParts = fullName.split(" ")
+
+      // Si hay al menos dos partes, asumir que la última es el apellido
+      if (nameParts.length > 1) {
+        const lastName = nameParts.pop() // Extraer el último elemento como apellido
+        const firstName = nameParts.join(" ") // El resto es el nombre
+        return `${lastName}, ${firstName}`
+      }
+
+      // Si solo hay una parte, mostrarla tal cual
+      return fullName
+    }
+
+    return "Usuari"
   }
 
   const handleSubmit = async (e) => {
@@ -453,7 +470,9 @@ const RestaurantsForm = () => {
           const alumnesRef = collection(db, "Restaurant", newRestaurantRef.id, "alumnes")
 
           const alumneData = {
-            nom: `${userData.nom} ${userData.cognom}`,
+            nom: userData.nom,
+            cognom: userData.cognom,
+            segonCognom: userData.segonCognom || "",
             image: userData.imageUrl,
             correu: userData.email,
             responsabilitat: user.responsabilitat,
@@ -758,20 +777,7 @@ const RestaurantsForm = () => {
               <Tabs width="100%" p={4}>
                 <TabList mb={6} spacing={4} flexWrap="wrap">
                   {groupedUsers.map((user) => (
-                    <Tab key={user.userId}>
-                      {user.nom
-                        ? (() => {
-                            const nameParts = user.nom.split(" ")
-                            // Si hay al menos nombre y un apellido
-                            if (nameParts.length > 1) {
-                              const firstName = nameParts[0]
-                              const firstSurname = nameParts[1]
-                              return `${firstSurname}, ${firstName}`
-                            }
-                            return user.nom
-                          })()
-                        : "Usuari"}
-                    </Tab>
+                    <Tab key={user.userId}>{formatUserName(user)}</Tab>
                   ))}
                 </TabList>
                 <TabPanels>
@@ -783,20 +789,7 @@ const RestaurantsForm = () => {
                       <Box mb={6} w="100%" my={4} px={8} py={4} boxShadow={"3px 3px 8px 0 grey"} borderRadius={20}>
                         <FormControl mt={8} isRequired>
                           <FormLabel>Usuari</FormLabel>
-                          <Text fontSize="lg">
-                            {user.nom
-                              ? (() => {
-                                  const nameParts = user.nom.split(" ")
-                                  // Si hay al menos nombre y un apellido
-                                  if (nameParts.length > 1) {
-                                    const firstName = nameParts[0]
-                                    const firstSurname = nameParts[1]
-                                    return `${firstSurname}, ${firstName}`
-                                  }
-                                  return user.nom
-                                })()
-                              : ""}
-                          </Text>
+                          <Text fontSize="lg">{formatUserName(user)}</Text>
                         </FormControl>
                         <FormControl mt={8} isRequired>
                           <FormLabel>Any de inici</FormLabel>
@@ -904,4 +897,3 @@ const RestaurantsForm = () => {
 }
 
 export default RestaurantsForm
-
