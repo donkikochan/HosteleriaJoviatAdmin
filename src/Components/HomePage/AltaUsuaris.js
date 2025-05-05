@@ -25,7 +25,7 @@ import {
 } from "@chakra-ui/react"
 import { useLocation } from "wouter"
 import { db } from "../../firebaseConfig"
-import { collection, getDocs, doc, setDoc, deleteDoc } from "firebase/firestore"
+import { collection, getDocs, doc, setDoc, deleteDoc, updateDoc } from "firebase/firestore"
 import { ChevronRightIcon } from "@chakra-ui/icons"
 import Sidebar from "../Sidebar" // Import the Sidebar component
 
@@ -52,13 +52,13 @@ const AltaUsuaris = () => {
         ...doc.data(),
       }))
 
-      console.log("Usuarios cargados:", usersList.length)
+      console.log("Usuaris carregats:", usersList.length)
       setUsers(usersList)
     } catch (error) {
-      console.error("Error al cargar los usuarios:", error)
+      console.error("Error al carregar els usuaris:", error)
       toast({
         title: "Error",
-        description: "No se pudieron cargar los usuarios",
+        description: "No s'han pogut carregar els usuaris",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -92,6 +92,46 @@ const AltaUsuaris = () => {
     openReject()
   }
 
+  const reviewLater = async () => {
+    if (!selectedUser) return
+
+    setProcessingAction(true)
+    try {
+      // Marcar el usuario como "para revisar más tarde"
+      await updateDoc(doc(db, "AltaUsers", selectedUser.id), {
+        reviewLater: true,
+        reviewLaterDate: new Date(),
+      })
+
+      // Actualizar la lista local
+      setUsers(
+        users.map((user) =>
+          user.id === selectedUser.id ? { ...user, reviewLater: true, reviewLaterDate: new Date() } : user,
+        ),
+      )
+
+      toast({
+        title: "Revisió ajornada",
+        description: `L'usuari ${selectedUser.username} es revisarà més tard.`,
+        status: "info",
+        duration: 5000,
+        isClosable: true,
+      })
+    } catch (error) {
+      console.error("Error al marcar l'usuari per revisar més tard:", error)
+      toast({
+        title: "Error",
+        description: "No s'ha pogut ajornar la revisió. Torneu-ho a provar.",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+      })
+    } finally {
+      setProcessingAction(false)
+      closeModal()
+    }
+  }
+
   const acceptUser = async () => {
     if (!selectedUser) return
 
@@ -116,17 +156,17 @@ const AltaUsuaris = () => {
       setUsers(users.filter((user) => user.id !== selectedUser.id))
 
       toast({
-        title: "Usuario Verificado",
-        description: `${selectedUser.username} ha sido verificado correctamente.`,
+        title: "Usuari verificat",
+        description: `${selectedUser.username} ha estat verificat correctament.`,
         status: "success",
         duration: 5000,
         isClosable: true,
       })
     } catch (error) {
-      console.error("Error al verificar el usuario:", error)
+      console.error("Error al verificar l'usuari:", error)
       toast({
         title: "Error",
-        description: "No se pudo verificar el usuario. Inténtelo de nuevo.",
+        description: "No s'ha pogut verificar l'usuari. Torneu-ho a provar.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -141,7 +181,7 @@ const AltaUsuaris = () => {
     if (!selectedUser || !rejectReason.trim()) {
       toast({
         title: "Error",
-        description: "Debe proporcionar un motivo para el rechazo.",
+        description: "Cal proporcionar un motiu pel rebuig.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -169,8 +209,8 @@ const AltaUsuaris = () => {
       await deleteDoc(doc(db, "AltaUsers", selectedUser.id))
 
       toast({
-        title: "Usuario Rechazado",
-        description: `Se ha rechazado al usuario ${selectedUser.username}.`,
+        title: "Usuari rebutjat",
+        description: `S'ha rebutjat l'usuari ${selectedUser.username}.`,
         status: "info",
         duration: 5000,
         isClosable: true,
@@ -180,10 +220,10 @@ const AltaUsuaris = () => {
       closeReject()
       setRejectReason("")
     } catch (error) {
-      console.error("Error al rechazar el usuario:", error)
+      console.error("Error al rebutjar l'usuari:", error)
       toast({
         title: "Error",
-        description: "No se pudo rechazar el usuario. Inténtelo de nuevo.",
+        description: "No s'ha pogut rebutjar l'usuari. Torneu-ho a provar.",
         status: "error",
         duration: 5000,
         isClosable: true,
@@ -205,9 +245,10 @@ const AltaUsuaris = () => {
                 <HStack spacing={4}>
                   <Avatar size="md" src={user.imageUrl} name={user.username} />
                   <Box flex={1}>
-                    <Text fontWeight="bold">{user.username || "Sin nombre"}</Text>
-                    <Text color="gray.600">{user.email || "Sin email"}</Text>
-                    {user.rejected && <Badge colorScheme="red">Rechazado</Badge>}
+                    <Text fontWeight="bold">{user.username || "Sense nom"}</Text>
+                    <Text color="gray.600">{user.email || "Sense email"}</Text>
+                    {user.rejected && <Badge colorScheme="red">Rebutjat</Badge>}
+                    {user.reviewLater && <Badge colorScheme="purple">Revisar més tard</Badge>}
                   </Box>
                   <ChevronRightIcon />
                 </HStack>
@@ -216,7 +257,7 @@ const AltaUsuaris = () => {
           ))
         ) : (
           <Box textAlign="center" py={10}>
-            <Text fontSize="lg">No hay usuarios pendientes de aprobación</Text>
+            <Text fontSize="lg">No hi ha usuaris pendents d'aprovació</Text>
           </Box>
         )}
       </VStack>
@@ -224,39 +265,50 @@ const AltaUsuaris = () => {
       <Modal isOpen={isModalOpen} onClose={handleCloseModal} size="xl">
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Detalles del Usuario</ModalHeader>
+          <ModalHeader>Detalls de l'Usuari</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             {selectedUser && (
               <VStack spacing={4} align="stretch">
                 <Avatar size="2xl" src={selectedUser.imageUrl} name={selectedUser.username} alignSelf="center" />
                 <Text>
-                  <strong>Nombre:</strong> {selectedUser.username}
+                  <strong>Nom:</strong> {selectedUser.username}
                 </Text>
                 <Text>
-                  <strong>Apellidos:</strong> {selectedUser.apellidos}
+                  <strong>Cognoms:</strong> {selectedUser.apellidos}
                 </Text>
                 <Text>
                   <strong>Email:</strong> {selectedUser.email}
                 </Text>
                 <Text>
-                  <strong>Teléfono:</strong> {selectedUser.mobilePhone || "No especificado"}
+                  <strong>Telèfon:</strong> {selectedUser.mobilePhone || "No especificat"}
                 </Text>
                 <Text>
-                  <strong>Instagram:</strong> {selectedUser.instagram || "No especificado"}
+                  <strong>Instagram:</strong> {selectedUser.instagram || "No especificat"}
                 </Text>
                 <Text>
-                  <strong>LinkedIn:</strong> {selectedUser.linkedin || "No especificado"}
+                  <strong>LinkedIn:</strong> {selectedUser.linkedin || "No especificat"}
                 </Text>
+                {selectedUser.reviewLater && (
+                  <Text>
+                    <strong>Marcat per revisar més tard:</strong>{" "}
+                    {selectedUser.reviewLaterDate
+                      ? new Date(selectedUser.reviewLaterDate.toDate()).toLocaleDateString()
+                      : "Sí"}
+                  </Text>
+                )}
               </VStack>
             )}
           </ModalBody>
           <ModalFooter>
+            <Button colorScheme="purple" mr={3} onClick={reviewLater}>
+              Revisar més tard
+            </Button>
             <Button colorScheme="red" mr={3} onClick={showRejectModal}>
-              Rechazar
+              Rebutjar
             </Button>
             <Button colorScheme="green" onClick={showConfirmModal}>
-              Aceptar
+              Acceptar
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -265,12 +317,12 @@ const AltaUsuaris = () => {
       <Modal isOpen={isConfirmOpen} onClose={closeConfirm}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Confirmar Aceptación</ModalHeader>
+          <ModalHeader>Confirmar Acceptació</ModalHeader>
           <ModalCloseButton />
-          <ModalBody>¿Está seguro que desea aceptar a este usuario?</ModalBody>
+          <ModalBody>Esteu segur que voleu acceptar aquest usuari?</ModalBody>
           <ModalFooter>
             <Button colorScheme="gray" mr={3} onClick={closeConfirm}>
-              Cancelar
+              Cancel·lar
             </Button>
             <Button colorScheme="green" onClick={acceptUser} isLoading={processingAction}>
               Confirmar
@@ -282,21 +334,21 @@ const AltaUsuaris = () => {
       <Modal isOpen={isRejectOpen} onClose={closeReject}>
         <ModalOverlay />
         <ModalContent>
-          <ModalHeader>Motivo del Rechazo</ModalHeader>
+          <ModalHeader>Motiu del Rebuig</ModalHeader>
           <ModalCloseButton />
           <ModalBody>
             <Input
-              placeholder="Ingrese el motivo del rechazo"
+              placeholder="Introduïu el motiu del rebuig"
               value={rejectReason}
               onChange={(e) => setRejectReason(e.target.value)}
             />
           </ModalBody>
           <ModalFooter>
             <Button colorScheme="gray" mr={3} onClick={closeReject}>
-              Cancelar
+              Cancel·lar
             </Button>
             <Button colorScheme="red" onClick={rejectUser} isLoading={processingAction}>
-              Rechazar
+              Rebutjar
             </Button>
           </ModalFooter>
         </ModalContent>
@@ -319,4 +371,3 @@ const AltaUsuaris = () => {
 }
 
 export default AltaUsuaris
-

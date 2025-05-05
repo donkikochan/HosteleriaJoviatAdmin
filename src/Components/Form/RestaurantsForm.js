@@ -997,8 +997,9 @@ const RestaurantsForm = () => {
                         {hasIncompleteFields(user) && (
                           <Alert status="warning" mb={4}>
                             <AlertIcon />
-                            <Text>  
-                              Aquest treballador te camps obligatoris per completar. Si us plau, ompliu tots els camps marcats amb *.
+                            <Text>
+                              Aquest treballador te camps obligatoris per completar. Si us plau, ompliu tots els camps
+                              marcats amb *.
                             </Text>
                           </Alert>
                         )}

@@ -856,7 +856,7 @@ const EditRestaurantForm = () => {
           <Input name="latitud" value={restaurant.latitud} onChange={handleChange} placeholder="Latitud geográfica" />
         </FormControl>
 
-        <FormControl isRequired>
+        <FormControl>
           <FormLabel>Instagram</FormLabel>
           <Input
             name="instagram"
@@ -895,7 +895,7 @@ const EditRestaurantForm = () => {
           />
         </FormControl>
 
-        <FormControl isRequired>
+        <FormControl>
           <FormLabel>Descripció</FormLabel>
           <Input
             name="descripcio"
