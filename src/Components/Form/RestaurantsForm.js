@@ -902,7 +902,7 @@ const RestaurantsForm = () => {
 
         <FormControl mb={5} maxW={600}>
           <Box>
-            <FormLabel my={7}>Treballadors</FormLabel>
+            <FormLabel my={7}>Treballadors formats a Joviat</FormLabel>
 
             {selectedUsers.length > 0 ? (
               <Tabs width="100%" p={4} index={tabIndex} onChange={handleTabChange}>

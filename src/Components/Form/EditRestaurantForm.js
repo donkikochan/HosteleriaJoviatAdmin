@@ -906,7 +906,7 @@ const EditRestaurantForm = () => {
         </FormControl>
 
         <FormControl mt={10}>
-          <FormLabel>Treballadors</FormLabel>
+          <FormLabel>Treballadors formats a Joviat</FormLabel>
         </FormControl>
 
         {loadingUsers ? (
