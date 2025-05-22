@@ -47,10 +47,19 @@ const AltaUsuaris = () => {
       const usersCollection = collection(db, "AltaUsers")
       const usersSnapshot = await getDocs(usersCollection)
 
-      const usersList = usersSnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }))
+      const usersList = usersSnapshot.docs.map((doc) => {
+        const userData = doc.data();
+        // Procesar correctamente la fecha de revisión si existe
+        if (userData.reviewLaterDate) {
+          // Mantener el objeto Timestamp tal como está para que toDate() funcione correctamente
+          // No es necesario convertirlo aquí, solo asegurarse de que existe
+          console.log("Usuario con fecha de revisión:", userData.username);
+        }
+        return {
+          id: doc.id,
+          ...userData,
+        };
+      })
 
       console.log("Usuaris carregats:", usersList.length)
       setUsers(usersList)
@@ -73,7 +82,16 @@ const AltaUsuaris = () => {
   }, [])
 
   const openUserDetails = (user) => {
-    setSelectedUser(user)
+    // Asegurarse de que la fecha se maneja correctamente antes de mostrar el usuario
+    const processedUser = {
+      ...user,
+      // Si existe reviewLaterDate y es un objeto Timestamp, mantenerlo como está
+      // Si no, asegurarse de que sea un objeto Date válido
+      reviewLaterDate: user.reviewLaterDate 
+        ? (user.reviewLaterDate.toDate ? user.reviewLaterDate : new Date(user.reviewLaterDate))
+        : null
+    }
+    setSelectedUser(processedUser)
     openModal()
   }
 
@@ -97,16 +115,17 @@ const AltaUsuaris = () => {
 
     setProcessingAction(true)
     try {
+      const currentDate = new Date();
       // Marcar el usuario como "para revisar más tarde"
       await updateDoc(doc(db, "AltaUsers", selectedUser.id), {
         reviewLater: true,
-        reviewLaterDate: new Date(),
+        reviewLaterDate: currentDate,
       })
 
       // Actualizar la lista local
       setUsers(
         users.map((user) =>
-          user.id === selectedUser.id ? { ...user, reviewLater: true, reviewLaterDate: new Date() } : user,
+          user.id === selectedUser.id ? { ...user, reviewLater: true, reviewLaterDate: currentDate } : user,
         ),
       )
 
@@ -129,6 +148,7 @@ const AltaUsuaris = () => {
     } finally {
       setProcessingAction(false)
       closeModal()
+      setSelectedUser(null)  // Limpiar el usuario seleccionado al cerrar
     }
   }
 
@@ -293,7 +313,9 @@ const AltaUsuaris = () => {
                   <Text>
                     <strong>Marcat per revisar més tard:</strong>{" "}
                     {selectedUser.reviewLaterDate
-                      ? new Date(selectedUser.reviewLaterDate.toDate()).toLocaleDateString()
+                      ? (selectedUser.reviewLaterDate.toDate 
+                          ? new Date(selectedUser.reviewLaterDate.toDate()).toLocaleDateString()
+                          : new Date(selectedUser.reviewLaterDate).toLocaleDateString())
                       : "Sí"}
                   </Text>
                 )}
